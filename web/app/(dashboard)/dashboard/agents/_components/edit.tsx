@@ -37,6 +37,7 @@ import {
   fetchAgentProfile,
   fetchUsersAll,
   type AdminAgentProfile,
+  type AdminAgentTeam,
   type AdminUser,
   type CreateAdminAgentProfilePayload,
 } from "@/lib/api/admin";
@@ -50,6 +51,7 @@ type AgentEditDialogProps = {
   saving: boolean;
   itemId: number | null;
   defaultTeamId: number | null;
+  teams: AdminAgentTeam[];
   onOpenChange: (open: boolean) => void;
   onSubmit: (payload: CreateAdminAgentProfilePayload) => Promise<void>;
 };
@@ -167,6 +169,7 @@ export function EditDialog({
   saving,
   itemId,
   defaultTeamId,
+  teams,
   onOpenChange,
   onSubmit,
 }: AgentEditDialogProps) {
@@ -180,6 +183,7 @@ export function EditDialog({
       open={open}
       itemId={itemId}
       defaultTeamId={defaultTeamId}
+      teams={teams}
       saving={saving}
       onOpenChange={onOpenChange}
       onSubmit={onSubmit}
@@ -192,6 +196,7 @@ type AgentEditDialogBodyProps = {
   saving: boolean;
   itemId: number | null;
   defaultTeamId: number | null;
+  teams: AdminAgentTeam[];
   onOpenChange: (open: boolean) => void;
   onSubmit: (payload: CreateAdminAgentProfilePayload) => Promise<void>;
 };
@@ -201,6 +206,7 @@ function AgentEditDialogBody({
   saving,
   itemId,
   defaultTeamId,
+  teams,
   onOpenChange,
   onSubmit,
 }: AgentEditDialogBodyProps) {
@@ -307,6 +313,26 @@ function AgentEditDialogBody({
           className="space-y-4"
         >
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field data-invalid={!!errors.teamId}>
+              <FieldLabel>{t("agentProfile.teamTitle")}</FieldLabel>
+              <FieldContent>
+                <Controller
+                  control={control}
+                  name="teamId"
+                  render={({ field }) => (
+                    <OptionCombobox
+                      value={field.value}
+                      options={teams.map((team) => ({ value: String(team.id), label: team.name }))}
+                      placeholder={t("agentProfile.teamRequired")}
+                      searchPlaceholder={t("agentProfile.teamRequired")}
+                      emptyText={t("agentProfile.noTeams")}
+                      onChange={field.onChange}
+                    />
+                  )}
+                />
+                <FieldError errors={[errors.teamId]} />
+              </FieldContent>
+            </Field>
             <Field data-invalid={!!errors.userId}>
               <FieldLabel>{t("agentProfile.linkedUser")}</FieldLabel>
               <FieldContent>

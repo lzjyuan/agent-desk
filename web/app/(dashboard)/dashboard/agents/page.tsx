@@ -50,9 +50,11 @@ export default function DashboardAgentsPage() {
   const t = useI18n();
   const serviceStatusOptions = useMemo(() => getServiceStatusOptions(t), [t]);
   const [selectedTeam, setSelectedTeam] = useState<AdminAgentTeam | null>(null);
+  const [teams, setTeams] = useState<AdminAgentTeam[]>([]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const handleTeamsChange = useCallback((nextTeams: AdminAgentTeam[]) => {
+    setTeams(nextTeams);
     setSelectedTeam((current) => {
       if (nextTeams.length === 0) {
         return null;
@@ -263,6 +265,7 @@ export default function DashboardAgentsPage() {
                 saving={saving}
                 itemId={itemId}
                 defaultTeamId={selectedTeam?.id ?? null}
+                teams={teams}
                 onOpenChange={onOpenChange}
                 onSubmit={onSubmit}
               />
