@@ -229,6 +229,13 @@ export function assignAgentConversation(
   })
 }
 
+export function interveneAgentConversation(conversationId: number) {
+  return request<void>("/api/dashboard/conversation/intervene", {
+    method: "POST",
+    body: JSON.stringify({ conversationId }),
+  })
+}
+
 export function transferAgentConversation(
   conversationId: number,
   toUserId: number,

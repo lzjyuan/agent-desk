@@ -56,7 +56,7 @@ type ServerConfig struct {
 
 // defaultTrustedProxies covers loopback, RFC1918, IPv6 unique-local and
 // link-local ranges. That is the shape of almost every real deployment - a
-// sidecar tunnel, a compose network, a local nginx - and a client on the public
+// sidecar tunnel, a private network, a local nginx - and a client on the public
 // internet cannot present one of these addresses as its direct peer, so
 // X-Forwarded-For stays honest. When the app is exposed directly the peer is a
 // public address, is not trusted, and Gin falls back to it.

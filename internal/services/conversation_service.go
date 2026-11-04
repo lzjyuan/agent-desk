@@ -244,6 +244,66 @@ func (s *conversationService) AssignConversation(req request.AssignConversationR
 	return nil
 }
 
+func (s *conversationService) InterveneConversation(conversationID int64, operator *dto.AuthPrincipal) error {
+	if operator == nil {
+		return errorsx.UnauthorizedI18n("error.auth.expired")
+	}
+	profile := AgentProfileService.GetByUserID(operator.UserID)
+	if profile == nil || profile.Status != enums.StatusOk {
+		return errorsx.InvalidParamI18n("error.e0276")
+	}
+	const reason = "客服主动介入"
+	now := time.Now()
+	if err := sqls.WithTransaction(func(ctx *sqls.TxContext) error {
+		conversation := repositories.ConversationRepository.Get(ctx.Tx, conversationID)
+		if conversation == nil {
+			return errorsx.InvalidParamI18n("error.e0116")
+		}
+		if conversation.Status != enums.IMConversationStatusAIServing {
+			return errorsx.InvalidParamI18n("error.conversation.interveneUnavailable")
+		}
+		updated, err := repositories.ConversationRepository.AssignAIServing(ctx.Tx, conversationID, map[string]any{
+			"status":              enums.IMConversationStatusActive,
+			"current_assignee_id": operator.UserID,
+			"current_team_id":     profile.TeamID,
+			"handoff_at":          now,
+			"handoff_reason":      reason,
+			"update_user_id":      operator.UserID,
+			"update_user_name":    operator.Username,
+			"updated_at":          now,
+		})
+		if err != nil {
+			return err
+		}
+		if !updated {
+			return errorsx.InvalidParamI18n("error.conversation.interveneUnavailable")
+		}
+		if err := ConversationAssignmentService.CreateAssignment(ctx, conversationID, 0, operator.UserID, enums.IMAssignmentTypeAssign, reason, operator, now); err != nil {
+			return err
+		}
+		return ConversationEventLogService.CreateEvent(ctx, conversationID, enums.IMEventTypeAssign, enums.IMSenderTypeAgent, operator.UserID, reason, s.buildEventPayload(map[string]any{
+			"fromStatus":     conversation.Status,
+			"toStatus":       enums.IMConversationStatusActive,
+			"fromAssigneeId": 0,
+			"toAssigneeId":   operator.UserID,
+			"reason":         reason,
+		}))
+	}); err != nil {
+		return err
+	}
+	if conversation := s.Get(conversationID); conversation != nil {
+		WsService.PublishConversationChanged(conversation, enums.IMRealtimeEventConversationAssigned)
+	}
+	eventbus.PublishAsync(context.Background(), events.ConversationAssignedEvent{
+		ConversationID: conversationID,
+		ToUserID:       operator.UserID,
+		OperatorID:     operator.UserID,
+		Reason:         reason,
+		AssignType:     events.ConversationAssignTypeAssign,
+	})
+	return nil
+}
+
 func (s *conversationService) AutoAssignConversation(conversationID int64, operator *dto.AuthPrincipal) error {
 	if operator == nil {
 		return errorsx.UnauthorizedI18n("error.auth.expired")

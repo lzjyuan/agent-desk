@@ -23,9 +23,10 @@ async function loadConfig() {
 }
 
 test("normalizes supported locale aliases", async () => {
-  const { DEFAULT_LOCALE, normalizeLocale } = await loadConfig()
+  const { DEFAULT_LOCALE, DEFAULT_CLIENT_LOCALE, normalizeLocale } = await loadConfig()
 
   assert.equal(DEFAULT_LOCALE, "zh-CN")
+  assert.equal(DEFAULT_CLIENT_LOCALE, "en-US")
   assert.equal(normalizeLocale("zh-CN"), "zh-CN")
   assert.equal(normalizeLocale("zh_CN"), "zh-CN")
   assert.equal(normalizeLocale("zh"), "zh-CN")

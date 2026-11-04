@@ -167,6 +167,13 @@ test("Indonesian client setting localizes launcher and iframe title", async () =
   assert.equal(frame.title, "Bantuan pelanggan")
 })
 
+test("widget defaults to English without a client language setting", async () => {
+  const sandbox = await loadSdk({ channelId: "ch_1", baseUrl: "https://api.example" }, null)
+  await flushPromises()
+  const launcher = sandbox.document.body.children.find((child) => child.dataset.agentDeskWidget === "launcher")
+  assert.equal(launcher.children.at(-1)?.textContent, "Support")
+})
+
 test("chat iframe layout uses dynamic viewport height for iOS browser chrome", async () => {
   const sandbox = await loadSdk({
     channelId: "ch_1",

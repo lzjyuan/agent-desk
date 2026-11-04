@@ -90,7 +90,7 @@ var systemConfigDefinitions = map[string]map[string]systemConfigDefinition{
 		"clientLanguage": {
 			GroupCode: "general", Key: "clientLanguage",
 			TitleKey: "systemConfig.general.clientLanguage.title", DescriptionKey: "systemConfig.general.clientLanguage.description",
-			DefaultValue: i18nx.LocaleZhCN, Validator: clientLanguageValidator{},
+			DefaultValue: i18nx.LocaleEnUS, Validator: clientLanguageValidator{},
 		},
 	},
 	systemConfigGroupSupportCenter: {

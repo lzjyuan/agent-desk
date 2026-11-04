@@ -1,62 +1,57 @@
 
 server:
   port: 8083
-  # Custom platform / instance branding (optional)
+  # 自定义平台或实例品牌信息（可选）。
   companyName: ""
   companyLogoUrl: ""
-  # Reverse proxies in front of the application, as CIDR blocks. Gin's own default
-  # trusts every peer, which makes X-Forwarded-For authoritative and lets any
-  # caller choose the client address the server records in the login credential
-  # log and in user.last_login_ip. Left empty this falls back to the loopback,
-  # RFC1918, IPv6 unique-local and link-local ranges, which covers a sidecar
-  # tunnel, a compose network and a local nginx. Set it explicitly when the proxy
-  # sits on a public address, and never set it to 0.0.0.0/0.
+  # 应用前方可信反向代理的 CIDR 网段。Gin 默认信任所有来源，可能让请求方伪造
+  # X-Forwarded-For，影响登录日志、user.last_login_ip 和按 IP 限流。
+  # 留空时仅信任环回、RFC1918 私网、IPv6 唯一本地和链路本地地址，
+  # 通常已覆盖内网代理和本机 Nginx。代理使用公网地址时需明确配置，
+  # 不要设为 0.0.0.0/0。
   trustedProxies: []
-  # Set to "cloudflare" (also accepted: "fly.io", "google-app-engine", or a literal
-  # header name) when an edge overwrites rather than appends the real client
-  # address. When set it takes precedence over X-Forwarded-For entirely.
+  # 边缘平台覆盖而非追加真实客户端地址时设置，例如 "cloudflare"。
+  # 也支持 "fly.io"、"google-app-engine" 或具体请求头名称；
+  # 设置后优先于 X-Forwarded-For。
   trustedPlatform: ""
   rateLimit:
-    # Bounds how often one client address may call the public, unauthenticated
-    # endpoints: login, support registration, the widget session exchange, message
-    # uploads and documentation feedback. Enabled by default.
+    # 限制单个客户端地址访问公开、未认证接口的频率，包括登录、客服注册、
+    # Widget 会话交换、消息上传和文档反馈。默认启用。
     #
-    # Channel webhooks under /api/third, the websocket routes, /api/webhooks and
-    # the whole authenticated dashboard are deliberately NOT covered. A platform
-    # that receives a 429 from its webhook stops retrying and eventually disables
-    # the delivery, which takes an entire channel offline.
+    # 不限制 /api/third 下的渠道 Webhook、WebSocket 路由、/api/webhooks
+    # 和已认证的后台接口。Webhook 返回 429 可能使渠道平台停止重试，
+    # 最终导致整个渠道无法收取消息。
     #
-    # The counters live in this process. Running several replicas gives each one
-    # its own budget, which weakens the bound by the replica count; these limits
-    # exist to make flooding expensive, not to meter a quota.
+    # 计数器仅保存在当前进程；多个实例各自计数，总限额会相应放宽。
+    # 此功能用于增加恶意请求成本，不用于精确配额计量。
     enabled: true
     windowSeconds: 60
   cors:
-    # Browser CORS allowlist. In production, replace this with the actual frontend or embedded-site domains, such as https://support.example.com.
-    # Leave it empty to reject cross-origin browser requests. Same-origin and non-browser calls are still supported.
+    # 浏览器跨域白名单。生产环境应改为实际前端或嵌入站点域名，例如 https://support.example.com。
+    # 留空会拒绝浏览器跨域请求；同源请求和非浏览器请求不受影响。
     allowedOrigins:
       - http://127.0.0.1:8083
       - http://localhost:8083
 
 db:
-  # Database driver. Supported values: sqlite, mysql, postgres (or postgresql).
+  # 数据库类型：sqlite、mysql、postgres（或 postgresql）。
   type: sqlite
-  # Database connection string.
-  # SQLite example: file:./data/app.db?_pragma=journal_mode(WAL)&_pragma=busy_timeout(10000)&_txlock=immediate
-  # MySQL example: user:password@tcp(127.0.0.1:3306)/cs_ai_agent_db?charset=utf8mb4&parseTime=True&multiStatements=true&loc=Local
-  # PostgreSQL (Supabase Session Pooler) example:
+  # 数据库连接字符串。
+  # SQLite 示例：file:./data/app.db?_pragma=journal_mode(WAL)&_pragma=busy_timeout(10000)&_txlock=immediate
+  # MySQL 示例：user:password@tcp(127.0.0.1:3306)/cs_ai_agent_db?charset=utf8mb4&parseTime=True&multiStatements=true&loc=Local
+  # PostgreSQL（Supabase 会话连接池）示例：
   #   dsn: "host=aws-1-ap-southeast-1.pooler.supabase.com user=postgres.gulptwduchsjcsbndmua password=<PASSWORD> dbname=postgres port=5432 sslmode=require search_path=desk"
-  # PostgreSQL URI example:
+  # PostgreSQL URI 示例：
   #   dsn: "postgresql://postgres.gulptwduchsjcsbndmua:<PASSWORD>@aws-1-ap-southeast-1.pooler.supabase.com:5432/postgres?sslmode=require&search_path=desk"
-  # For MySQL, keep parseTime=True so datetime fields are scanned into Go time values correctly.
+  # 使用 MySQL 时保留 parseTime=True，确保日期时间字段正确解析为 Go 时间值。
   dsn: file:./data/app.db?_pragma=journal_mode(WAL)&_pragma=busy_timeout(10000)&_txlock=immediate
-  # Maximum number of idle connections kept in the pool. Values <= 0 use the database/sql default.
+  # 连接池最大空闲连接数；小于等于 0 时使用 database/sql 默认值。
   maxIdleConns: 5
-  # Maximum number of open connections. Values <= 0 mean no explicit limit.
+  # 连接池最大打开连接数；小于等于 0 表示不显式限制。
   maxOpenConns: 20
-  # Maximum time an idle connection may stay in the pool, in seconds. Values <= 0 leave it unset.
+  # 空闲连接最长保留时间（秒）；小于等于 0 表示不设置。
   connMaxIdleTimeSeconds: 300
-  # Maximum lifetime of a connection, in seconds. Values <= 0 leave it unset.
+  # 连接最大存活时间（秒）；小于等于 0 表示不设置。
   connMaxLifetimeSeconds: 1800
 
 logger:
@@ -65,92 +60,89 @@ logger:
   addSource: false
 
 auth:
-  # Enable username and password login. When set to false, users must sign in with SSO (e.g. OIDC or WeCom).
-  # Default is true.
+  # 是否启用用户名密码登录；关闭后用户必须通过 OIDC、企业微信等单点登录。
+  # 默认启用。
   passwordLoginEnabled: true
-  # Login access token lifetime, in hours. Values <= 0 fall back to 12 hours.
-  # Applies to password login, OIDC login, and WeCom login sessions.
+  # 登录访问令牌有效期（小时）；小于等于 0 时使用 12 小时。
+  # 适用于密码、OIDC 和企业微信登录会话。
   tokenTTLHours: 12
-  # Maximum failed password attempts allowed within the lock window.
-  # Values <= 0 disable credential lockout.
+  # 锁定窗口内允许的最大密码失败次数；小于等于 0 时禁用锁定。
   maxFailedAttempts: 5
-  # Failed-login lock window, in minutes. When maxFailedAttempts is reached within this window, login is temporarily blocked.
-  # Values <= 0 fall back to 15 minutes when lockout is enabled.
+  # 登录失败锁定窗口（分钟）；窗口内达到 maxFailedAttempts 后暂时禁止登录。
+  # 启用锁定时，小于等于 0 使用 15 分钟。
   credentialLockMinute: 15
 
 customerSession:
-  # Signing secret for customer service session tokens. Use a separate, high-entropy random string; do not reuse the channel userTokenSecret.
+  # 客户会话令牌签名密钥。使用独立的高强度随机字符串，不要复用渠道 userTokenSecret。
   secret: ""
-  # Default lifetime for customer service session tokens, in minutes.
+  # 客户会话令牌默认有效期（分钟）。
   ttlMinutes: 120
-  # Automatically refresh the token when its remaining lifetime falls below this value, in minutes.
+  # 令牌剩余有效期低于此值时自动刷新（分钟）。
   refreshThresholdMinutes: 30
 
 storage:
-  # Default file storage provider used for uploads. Supported values: local, oss.
-  # Empty value is treated as local by the backend.
+  # 上传文件默认存储方式：local 或 oss；留空时后端按 local 处理。
   default: local
-  # Maximum size of a single uploaded file, in MB. Values <= 0 fall back to the backend default.
+  # 单个上传文件大小上限（MB）；小于等于 0 时使用后端默认值。
   maxUploadSizeMB: 20
   local:
-    # Files are written under this directory, relative to the process working directory unless an absolute path is used.
+    # 文件存储目录；使用相对路径时以程序工作目录为基准。
     root: data/storage
-    # Public URL prefix used when returning local file URLs. The server must expose this path as static files.
-    # Example: storage key "images/a.png" becomes "/storage/images/a.png".
+    # 返回本地文件地址时使用的公开 URL 前缀；服务端需将此路径作为静态文件目录开放。
+    # 示例：存储键 "images/a.png" 对应 "/storage/images/a.png"。
     baseUrl: /storage
   oss:
-    # Aliyun OSS endpoint. Both "oss-cn-hangzhou.aliyuncs.com" and "https://oss-cn-hangzhou.aliyuncs.com" are accepted.
+    # 阿里云 OSS 地址；可填域名或带 https:// 的完整地址。
     endpoint: ""
-    # OSS bucket name.
+    # OSS 存储桶名称。
     bucket: ""
-    # OSS access credentials. Keep the secret out of committed environment-specific config.
+    # OSS 访问凭据；不要将密钥提交到版本库。
     accessKeyId: ""
     accessKeySecret: ""
-    # Optional public CDN/custom domain prefix for object URLs, for example https://files.example.com.
-    # If empty, public buckets use the default bucket endpoint URL; private buckets use signed URLs.
+    # 可选的 CDN 或自定义域名前缀，例如 https://files.example.com。
+    # 留空时公开存储桶使用默认地址，私有存储桶使用签名地址。
     baseUrl: ""
-    # Set to true for private buckets. Private buckets return temporary signed URLs for reads.
+    # 私有存储桶设为 true；读取文件时返回临时签名地址。
     private: false
-    # Expiration for generated OSS signed GET URLs, in seconds. Values <= 0 fall back to 600.
+    # OSS 签名下载地址有效期（秒）；小于等于 0 时使用 600 秒。
     signedUrlExpireSeconds: 600
 
 vectorDB:
-  type: qdrant # qdrant, lancedb
+  type: qdrant # 可选：qdrant、lancedb
   qdrant:
     host: 127.0.0.1
     grpcPort: 6334
     apiKey: ""
     useTls: false
-  # LanceDB requires building the backend with -tags lancedb and LanceDB native libraries.
+  # 使用 LanceDB 需通过 -tags lancedb 构建后端，并安装 LanceDB 原生库。
   lancedb:
     path: data/lancedb
 
 mcp:
-  # Global switch for MCP tool integration.
-  # When false, MCP tool catalog, debug endpoints, and runtime tool calls are disabled.
+  # MCP 工具集成总开关；关闭后禁用工具目录、调试接口和运行时调用。
   enabled: true
-  # MCP server registry. Each map key is the serverCode used by toolCode values like "system/tool_name".
+  # MCP 服务注册表；映射键是 serverCode，例如 toolCode "system/tool_name" 中的 "system"。
   servers:
     system:
-      # Whether this MCP server is available for catalog listing, debug calls, and agent runtime calls.
+      # 是否在工具目录、调试调用和 Agent 运行时启用此 MCP 服务。
       enabled: true
-      # Streamable HTTP MCP endpoint. The built-in system server is exposed by this backend at /api/mcp.
+      # Streamable HTTP MCP 地址；内置 system 服务由本后端的 /api/mcp 提供。
       endpoint: "http://127.0.0.1:8083/api/mcp"
-      # Connection and request timeout in milliseconds. Values <= 0 fall back to 15000.
+      # 连接和请求超时（毫秒）；小于等于 0 时使用 15000。
       timeoutMs: 15000
-      # Extra HTTP headers sent to this MCP server on every request, for example Authorization or tenant headers.
+      # 每次请求附加的 HTTP 请求头，例如 Authorization 或租户标识。
       headers: {}
 
 oidc:
-  # Whether to enable OIDC login. This system acts as the OIDC client.
+  # 是否启用 OIDC 登录；本系统作为 OIDC 客户端。
   enabled: false
-  # OIDC provider issuer, for example https://idp.example.com/realms/demo.
+  # OIDC 身份提供方的 issuer，例如 https://idp.example.com/realms/demo。
   issuer: ""
   clientId: ""
   clientSecret: ""
-  # Must exactly match the redirect_uri registered with the OIDC provider.
+  # 必须与身份提供方登记的 redirect_uri 完全一致。
   redirectUrl: "http://127.0.0.1:8083/api/auth/oidc_callback"
-  # Signing secret for the OIDC login state. If left empty, clientSecret is used as the fallback.
+  # OIDC 登录状态签名密钥；留空时回退使用 clientSecret。
   stateSecret: ""
   scopes:
     - openid
@@ -158,46 +150,37 @@ oidc:
     - email
 
 wxWork:
-  # Whether to enable WeCom features.
-  # When set to false, the WeCom SDK is not initialized, and login, customer service callbacks, and app notifications are unavailable.
+  # 是否启用企业微信功能；关闭后不初始化企业微信 SDK，登录、客服回调和应用通知均不可用。
   enabled: false
-  # WeCom corporate ID.
-  # Example: wwxxxxxxxxxxxxxxxx, from the WeCom admin console.
+  # 企业微信企业 ID；示例：管理后台中的 wwxxxxxxxxxxxxxxxx。
   corpId: 
-  # WeCom app secret.
-  # Used by the backend to obtain access tokens and user identities. Keep it confidential.
+  # 企业微信应用密钥；后端用它获取访问令牌和用户身份，请妥善保管。
   corpSecret: ""
-  # AgentID of the WeCom custom app.
-  # Used for web authorization when scope=snsapi_privateinfo.
+  # 企业微信自建应用的 AgentID；scope=snsapi_privateinfo 网页授权时使用。
   agentId: 
-  # WeCom web authorization callback URL.
-  # Must be a full URL pointing to the backend endpoint:
-  # Example: http://127.0.0.1:8083/api/auth/wxwork_callback
-  # In production, use an official domain that WeCom can access, and make sure the domain is configured in the WeCom admin console.
+  # 企业微信网页授权回调地址，需填写指向后端接口的完整 URL。
+  # 示例：http://127.0.0.1:8083/api/auth/wxwork_callback
+  # 生产环境使用企业微信可访问的正式域名，并在企业微信管理后台登记。
   oauthRedirect: ""
-  # Signing secret for the WeCom login state.
-  # Used for tamper protection and replay protection. A separate random string is recommended.
-  # If left empty, the code falls back to corpSecret, but this is not recommended.
+  # 企业微信登录状态签名密钥，用于防篡改和防重放；建议使用独立随机字符串。
+  # 留空会回退使用 corpSecret，但不建议这样做。
   stateSecret: ""
-  # Private key for decrypting WeCom callbacks.
-  # Not used by the current login flow. Reserved for message callbacks and similar scenarios.
+  # 企业微信回调解密私钥；当前登录流程未使用，预留给消息回调等场景。
   rsaPrivateKey: ""
-  # WeCom callback token.
-  # Not used by the current login flow. Reserved for message callbacks and similar scenarios.
+  # 企业微信回调令牌；当前登录流程未使用，预留给消息回调等场景。
   token: ""
-  # WeCom message encryption/decryption EncodingAESKey.
-  # Not used by the current login flow. Reserved for message callbacks and similar scenarios.
+  # 企业微信消息加解密 EncodingAESKey；当前登录流程未使用，预留给消息回调等场景。
   encodingAESKey: ""
 
   notify:
-    # Whether to enable WeCom app message notifications.
+    # 是否启用企业微信应用消息通知。
     enabled: false
-    # Default list of system user IDs to receive notifications. If the target business user has a bound WeCom identity, that user is preferred.
-    # System user IDs are mapped to WeCom member IDs through identity bindings before messages are sent.
+    # 默认通知接收人的系统用户 ID 列表；业务用户已绑定企业微信身份时优先通知该用户。
+    # 发送前通过身份绑定将系统用户 ID 映射为企业微信成员 ID。
     toUsers: []
-    # Whether to send confidential messages.
+    # 是否发送保密消息。
     safe: false
-    # Whether to enable duplicate message checks.
+    # 是否启用重复消息检查。
     enableDuplicateCheck: true
-    # Duplicate message check window, in seconds.
+    # 重复消息检查窗口（秒）。
     duplicateCheckInterval: 1800

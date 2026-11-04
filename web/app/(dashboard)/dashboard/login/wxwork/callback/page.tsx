@@ -29,7 +29,7 @@ function WxWorkLoginCallbackContent() {
 
     const ticket = searchParams.get("ticket")?.trim() ?? ""
     const next = searchParams.get("next")
-    const nextPath = next && next.startsWith("/") ? next : "/dashboard"
+    const nextPath = next && next.startsWith("/") ? next : "/workbench"
 
     if (!ticket) {
       toast.error(t("auth.wxworkMissingTicket"))

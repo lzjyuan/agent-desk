@@ -12,6 +12,8 @@ config/config.yaml
 /lib/
 
 dist/
+deploy/target.local.json
+deploy/releases/
 __debug_bin*
 node_modules/
 .next/

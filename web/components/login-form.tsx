@@ -47,7 +47,7 @@ export function LoginForm({
   const wxworkError = searchParams.get("wxworkError")
   const oidcError = searchParams.get("oidcError")
   const redirectPath =
-    nextPath && nextPath.startsWith("/") ? nextPath : "/dashboard"
+    nextPath && nextPath.startsWith("/") ? nextPath : "/workbench"
   const enabledProviderCount =
     Number(publicConfig?.wxworkEnabled) + Number(publicConfig?.oidcEnabled)
   const isPasswordLoginEnabled = publicConfig?.passwordLoginEnabled !== false

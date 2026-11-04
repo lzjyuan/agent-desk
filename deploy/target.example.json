@@ -1,0 +1,8 @@
+{
+  "host": "SERVER_IP",
+  "user": "root",
+  "sshPort": 22,
+  "identityFile": "",
+  "remoteRoot": "/opt/agent-service",
+  "serviceUser": "www-data"
+}

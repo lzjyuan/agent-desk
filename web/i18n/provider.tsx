@@ -10,6 +10,7 @@ import {
 } from "react"
 
 import {
+  DEFAULT_CLIENT_LOCALE,
   DEFAULT_LOCALE,
   type AppLocale,
   configureLocale,
@@ -30,15 +31,15 @@ const LocaleContext = createContext<LocaleContextValue>({
 })
 
 export function AppI18nProvider({ children, client = false }: { children: ReactNode; client?: boolean }) {
-  const [locale, setLocaleState] = useState<AppLocale>(DEFAULT_LOCALE)
+  const [locale, setLocaleState] = useState<AppLocale>(client ? DEFAULT_CLIENT_LOCALE : DEFAULT_LOCALE)
   const [isLocaleReady, setIsLocaleReady] = useState(false)
 
   useEffect(() => {
     let cancelled = false
 
     fetchPublicConfig()
-      .then((config) => configureLocale(client ? config.clientLanguage : config.language))
-      .catch(() => configureLocale(DEFAULT_LOCALE))
+      .then((config) => configureLocale((client ? config.clientLanguage : config.language) || (client ? DEFAULT_CLIENT_LOCALE : DEFAULT_LOCALE)))
+      .catch(() => configureLocale(client ? DEFAULT_CLIENT_LOCALE : DEFAULT_LOCALE))
       .then((configuredLocale) => {
         if (cancelled) {
           return

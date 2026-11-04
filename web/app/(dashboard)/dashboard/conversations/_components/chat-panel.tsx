@@ -49,6 +49,7 @@ import {
 import { useIsLgUp } from "@/hooks/use-lg-media";
 import {
   assignAgentConversation,
+  interveneAgentConversation,
   type AgentMessage,
 } from "@/lib/api/agent";
 import {
@@ -169,7 +170,7 @@ export function ChatPanel() {
   );
   const shouldStickToBottomRef = useRef(true);
   const [claiming, setClaiming] = useState(false);
-  const [claimDialogOpen, setClaimDialogOpen] = useState(false);
+  const [claimTarget, setClaimTarget] = useState<{ id: number; intervene: boolean } | null>(null);
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
   const [workflowRunDialogOpen, setWorkflowRunDialogOpen] = useState(false);
   const [workflowRunLoading, setWorkflowRunLoading] = useState(false);
@@ -180,6 +181,7 @@ export function ChatPanel() {
   const isPendingConversation = conversation?.status === 2;
   const showMessageEditor = !isClosedConversation && !isPendingConversation;
   const currentUserId = readSession()?.user?.id ?? 0;
+  const canIntervene = readSession()?.permissions.includes("conversation.assign") ?? false;
 
   const switchToMyActiveIfNeeded = () => {
     if (conversationFilter !== "pending") {
@@ -271,7 +273,7 @@ export function ChatPanel() {
   };
 
   const handleClaim = async () => {
-    if (!conversation || claiming) return;
+    if (!conversation || !claimTarget || conversation.id !== claimTarget.id || claiming) return;
     const session = readSession();
     if (!session?.user?.id) {
       toast.error(t("conversation.claimRequiresSignIn"));
@@ -280,18 +282,22 @@ export function ChatPanel() {
 
     setClaiming(true);
     try {
-      await assignAgentConversation(
-        conversation.id,
-        session.user.id,
-        t("conversation.claimReason"),
-      );
-
-      switchToMyActiveIfNeeded();
-      setClaimDialogOpen(false);
-      toast.success(t("conversation.claimSuccess"));
-      await reloadConversationData(conversation.id);
+      if (claimTarget.intervene) {
+        await interveneAgentConversation(claimTarget.id);
+        setConversationFilter("active" satisfies AgentConversationFilterKey);
+      } else {
+        await assignAgentConversation(
+          claimTarget.id,
+          session.user.id,
+          t("conversation.claimReason"),
+        );
+        switchToMyActiveIfNeeded();
+      }
+      setClaimTarget(null);
+      toast.success(t(claimTarget.intervene ? "conversation.interveneSuccess" : "conversation.claimSuccess"));
+      await reloadConversationData(claimTarget.id);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : t("conversation.claimFailed"));
+      toast.error(error instanceof Error ? error.message : t(claimTarget.intervene ? "conversation.interveneFailed" : "conversation.claimFailed"));
     } finally {
       setClaiming(false);
     }
@@ -407,6 +413,11 @@ export function ChatPanel() {
           icon={<BotIcon className="size-4" />}
           message={t("conversation.aiServingNotice")}
           tone="ai"
+          action={canIntervene ? (
+            <Button onClick={() => setClaimTarget({ id: conversation.id, intervene: true })} disabled={claiming} size="sm">
+              {claiming ? t("conversation.intervening") : t("conversation.intervene")}
+            </Button>
+          ) : undefined}
         />
       ) : isPendingConversation ? (
         <ComposerNotice
@@ -415,7 +426,7 @@ export function ChatPanel() {
           tone="action"
           action={
             <Button
-              onClick={() => setClaimDialogOpen(true)}
+              onClick={() => setClaimTarget({ id: conversation.id, intervene: false })}
               disabled={claiming}
               size="sm"
             >
@@ -486,19 +497,21 @@ export function ChatPanel() {
         </div>
       )}
       <Dialog
-        open={claimDialogOpen}
+        open={claimTarget !== null}
         onOpenChange={(open) => {
           if (claiming) {
             return;
           }
-          setClaimDialogOpen(open);
+          if (!open) setClaimTarget(null);
         }}
       >
         <DialogContent className="max-w-md" showCloseButton={false}>
           <DialogHeader>
-            <DialogTitle>{t("conversation.claimTitle")}</DialogTitle>
+            <DialogTitle>{t(claimTarget?.intervene ? "conversation.interveneTitle" : "conversation.claimTitle")}</DialogTitle>
             <DialogDescription>
-              {conversation
+              {claimTarget?.intervene
+                ? t("conversation.interveneConfirm")
+                : conversation
                 ? `${t("conversation.claimConfirmPrefix")}${
                     conversation.customerName ||
                     `${t("conversation.customerFallbackPrefix")}${conversation.customerId || conversation.id}`
@@ -511,7 +524,7 @@ export function ChatPanel() {
               type="button"
               variant="outline"
               disabled={claiming}
-              onClick={() => setClaimDialogOpen(false)}
+              onClick={() => setClaimTarget(null)}
             >
               {t("conversation.cancel")}
             </Button>
@@ -520,7 +533,9 @@ export function ChatPanel() {
               disabled={claiming}
               onClick={() => void handleClaim()}
             >
-              {claiming ? t("conversation.claiming") : t("conversation.confirmClaim")}
+              {claiming
+                ? t(claimTarget?.intervene ? "conversation.intervening" : "conversation.claiming")
+                : t(claimTarget?.intervene ? "conversation.intervene" : "conversation.confirmClaim")}
             </Button>
           </DialogFooter>
         </DialogContent>

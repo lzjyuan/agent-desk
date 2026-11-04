@@ -73,6 +73,21 @@ func TestTranslateUsesConfiguredDefaultForUnsupportedLocale(t *testing.T) {
 	}
 }
 
+func TestIndonesianClientErrorsDoNotFallBackToEnglish(t *testing.T) {
+	loadMessages()
+	for _, key := range []string{
+		"error.e0030", "error.e0064", "error.e0079", "error.e0090",
+		"error.e0116", "error.e0119", "error.e0120", "error.e0150",
+		"error.e0157", "error.e0160", "error.e0161", "error.e0209",
+		"error.e0211", "error.e0222", "error.e0245", "error.e0265",
+		"error.e0322", "error.e0323", "error.e0324",
+	} {
+		if value := lookupLocale(LocaleIdID, key); value == "" {
+			t.Errorf("missing Indonesian translation for %s", key)
+		}
+	}
+}
+
 func TestGetfSupportsLocaleKeys(t *testing.T) {
 	t.Parallel()
 

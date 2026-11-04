@@ -73,7 +73,7 @@ type FrameMessage =
     NormalizedAgentDeskConfig,
     "language" | "position" | "themeColor" | "width"
   > = {
-    language: "zh-CN",
+    language: "en-US",
     position: "right",
     themeColor: "#0f6cbd",
     width: "380px",
@@ -110,7 +110,7 @@ type FrameMessage =
       delete merged.apiBaseUrl
     }
     merged.channelId = String(merged.channelId || "")
-    merged.language = normalizeWidgetLanguage(String(merged.language || "zh-CN"))
+    merged.language = normalizeWidgetLanguage(String(merged.language || "en-US"))
     if (merged.externalId) {
       merged.externalId = String(merged.externalId)
     }

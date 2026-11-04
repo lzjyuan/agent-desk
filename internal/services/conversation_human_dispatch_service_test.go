@@ -47,6 +47,29 @@ func TestConversationHumanDispatchAIHandoffOffHoursKeepsAIServingAndSendsNotice(
 	}
 }
 
+func TestConversationInterveneAssignsCurrentAgentOnlyOnce(t *testing.T) {
+	db := setupConversationHumanDispatchTestDB(t)
+	aiAgent := createHumanDispatchAIAgent(t, db, enums.IMConversationServiceModeAIFirst, "1")
+	createHumanDispatchAgentProfile(t, db, 101, 1, enums.ServiceStatusIdle, 3, true, enums.StatusOk)
+	conversation := createHumanDispatchConversation(t, db, aiAgent.ID, enums.IMConversationStatusAIServing)
+	operator := &dto.AuthPrincipal{UserID: 101, Username: "agent", Nickname: "客服"}
+
+	if err := services.ConversationService.InterveneConversation(conversation.ID, operator); err != nil {
+		t.Fatalf("InterveneConversation() error = %v", err)
+	}
+	current := services.ConversationService.Get(conversation.ID)
+	if current.Status != enums.IMConversationStatusActive || current.CurrentAssigneeID != operator.UserID || current.CurrentTeamID != 1 || current.HandoffAt == nil {
+		t.Fatalf("conversation was not assigned to intervening agent: %+v", current)
+	}
+	if err := services.ConversationService.InterveneConversation(conversation.ID, operator); err == nil {
+		t.Fatal("repeat intervention should fail")
+	}
+	assignments := services.ConversationAssignmentService.Find(sqls.NewCnd().Eq("conversation_id", conversation.ID))
+	if len(assignments) != 1 || assignments[0].ToUserID != operator.UserID {
+		t.Fatalf("expected one assignment to current agent, got %+v", assignments)
+	}
+}
+
 func TestConversationHumanDispatchAIHandoffAssignsAvailableAgent(t *testing.T) {
 	db := setupConversationHumanDispatchTestDB(t)
 	aiAgent := createHumanDispatchAIAgent(t, db, enums.IMConversationServiceModeAIFirst, "1")

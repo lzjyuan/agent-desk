@@ -93,4 +93,3 @@ func ConversationPostClose(ctx *gin.Context) {
 	}
 	httpx.WriteJSON(ctx, nil)
 }
-

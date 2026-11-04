@@ -42,7 +42,7 @@ Use the bound knowledge base as the source of truth when describing capabilities
 - AI Agents, knowledge-base RAG, model configuration, Skills, Workflows, and MCP Tools;
 - AI and human collaboration, handoff, teams, schedules, conversations, and ticket workflows;
 - Web Widget, channel integration, the admin console, and the agent workspace;
-- Local evaluation, Docker Compose, private deployment, and secondary development;
+- Local evaluation, private deployment, and secondary development;
 - Differences from basic chatbots and traditional support systems.
 
 # Pre-sales conversation strategy
@@ -101,7 +101,7 @@ Use the bound knowledge base as the source of truth when describing capabilities
 - AI Agent、知识库 RAG、模型配置、Skills、Workflow 与 MCP Tool；
 - AI 与人工客服协同、转人工、客服组、排班、会话和工单闭环；
 - Web Widget、渠道接入、管理后台与客服工作台；
-- 本地体验、Docker Compose、私有化部署和二次开发；
+- 本地体验、私有化部署和二次开发；
 - 与普通聊天机器人、传统客服系统的差异。
 
 # 售前对话策略

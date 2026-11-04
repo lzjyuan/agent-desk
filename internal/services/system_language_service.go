@@ -24,10 +24,10 @@ func (s *systemConfigService) GetClientLanguage() string {
 
 func (s *systemConfigService) GetLanguages() (admin, client string) {
 	admin = i18nx.LocaleZhCN
+	client = i18nx.LocaleEnUS
 	if sqls.DB() == nil {
-		return admin, admin
+		return admin, client
 	}
-	var configuredClient string
 	for _, item := range s.FindByGroupCode("general") {
 		if item.Status == enums.StatusOk && (item.ConfigKey == "language" || item.ConfigKey == "clientLanguage") {
 			var language string
@@ -35,15 +35,12 @@ func (s *systemConfigService) GetLanguages() (admin, client string) {
 				if item.ConfigKey == "language" {
 					admin = language
 				} else {
-					configuredClient = language
+					client = language
 				}
 			}
 		}
 	}
-	if configuredClient == "" {
-		configuredClient = admin
-	}
-	return admin, configuredClient
+	return admin, client
 }
 
 func (s *systemConfigService) SaveSiteLanguage(language string, operator *dto.AuthPrincipal) error {

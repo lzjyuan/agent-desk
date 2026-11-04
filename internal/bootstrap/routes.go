@@ -226,6 +226,7 @@ func registerDashboardConversationRoutes(group *gin.RouterGroup) {
 	group.GET("/:id", dashboard.ConversationGetBy)
 	group.POST("/add_tag", dashboard.ConversationPostAdd_tag)
 	group.POST("/assign", dashboard.ConversationPostAssign)
+	group.POST("/intervene", dashboard.ConversationPostIntervene)
 	group.POST("/close", dashboard.ConversationPostClose)
 	group.Any("/conversations", dashboard.ConversationAnyConversations)
 	group.POST("/dispatch", dashboard.ConversationPostDispatch)

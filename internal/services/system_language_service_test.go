@@ -40,6 +40,9 @@ func TestSystemLanguageDefaultsAndAuthentication(t *testing.T) {
 	if got := SystemConfigService.GetSiteLanguage(); got != "zh-CN" {
 		t.Fatalf("initial language = %s, want zh-CN", got)
 	}
+	if got := SystemConfigService.GetClientLanguage(); got != "en-US" {
+		t.Fatalf("initial client language = %s, want en-US", got)
+	}
 	if err := SystemConfigService.SaveSiteLanguage("en-US", nil); err == nil {
 		t.Fatal("language save without an operator must fail")
 	}
@@ -58,7 +61,7 @@ func TestAdminAndClientLanguagesAreIndependent(t *testing.T) {
 		t.Fatal(err)
 	}
 	if got := SystemConfigService.GetClientLanguage(); got != "en-US" {
-		t.Fatalf("unset client language = %s, want existing site language", got)
+		t.Fatalf("unset client language = %s, want English default", got)
 	}
 	if err := SystemConfigService.SaveLanguages("zh-CN", "en-US", operator); err != nil {
 		t.Fatal(err)

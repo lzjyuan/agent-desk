@@ -11,7 +11,11 @@
     "loading": "Loading language settings…",
     "saving": "Saving…",
     "saved": "Language settings updated",
-    "failed": "Could not save the language settings. Try again."
+    "failed": "Could not save the language settings. Try again.",
+    "unsavedTitle": "Discard language changes?",
+    "unsavedDescription": "Your unsaved changes will be lost.",
+    "discardChanges": "Discard changes",
+    "continueEditing": "Keep editing"
   },
   "app": {
     "brand": "Agent Desk",
@@ -410,6 +414,12 @@
     "selectConversationToChat": "Select a conversation on the left to start chatting",
     "closedNotice": "This conversation is closed.",
     "aiServingNotice": "AI is handling this conversation. Transfer it to a human agent before replying.",
+    "intervene": "Take over",
+    "intervening": "Taking over...",
+    "interveneTitle": "Take over this conversation?",
+    "interveneConfirm": "AI will stop handling this conversation and it will be assigned to you.",
+    "interveneSuccess": "Conversation taken over.",
+    "interveneFailed": "Could not take over the conversation.",
     "claim": "Claim",
     "sendAttachmentFailed": "Could not send the attachment.",
     "customerSender": "Customer",

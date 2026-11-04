@@ -5,6 +5,7 @@ import { useRef, useState, type FormEvent } from "react"
 import { toast } from "sonner"
 
 import { useAuth } from "@/components/auth-provider"
+import { useConfirm } from "@/components/confirm-provider"
 import { OptionCombobox } from "@/components/option-combobox"
 import { Button } from "@/components/ui/button"
 import {
@@ -16,7 +17,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { isSupportedLocale } from "@/i18n/config"
+import { DEFAULT_CLIENT_LOCALE, isSupportedLocale } from "@/i18n/config"
 import { translateMessage } from "@/i18n/messages"
 import { useAppLocale, useI18n } from "@/i18n/provider"
 import { fetchPublicConfig, saveSiteLanguages } from "@/lib/api/config"
@@ -24,12 +25,13 @@ import { fetchPublicConfig, saveSiteLanguages } from "@/lib/api/config"
 export function SiteLanguageSettings() {
   const t = useI18n()
   const { session } = useAuth()
+  const confirm = useConfirm()
   const { locale, setLocale } = useAppLocale()
   const [open, setOpen] = useState(false)
   const [language, setLanguage] = useState(locale)
   const [currentLanguage, setCurrentLanguage] = useState(locale)
-  const [clientLanguage, setClientLanguage] = useState(locale)
-  const [currentClientLanguage, setCurrentClientLanguage] = useState(locale)
+  const [clientLanguage, setClientLanguage] = useState(DEFAULT_CLIENT_LOCALE)
+  const [currentClientLanguage, setCurrentClientLanguage] = useState(DEFAULT_CLIENT_LOCALE)
   const [loading, setLoading] = useState(false)
   const [ready, setReady] = useState(false)
   const loadId = useRef(0)
@@ -37,6 +39,22 @@ export function SiteLanguageSettings() {
   const [error, setError] = useState("")
 
   if (!session?.permissions.includes("systemConfig.update")) return null
+
+  async function close() {
+    if (saving) return
+    if (ready && (language !== currentLanguage || clientLanguage !== currentClientLanguage)) {
+      const discard = await confirm({
+        title: t("siteLanguage.unsavedTitle"),
+        description: t("siteLanguage.unsavedDescription"),
+        confirmText: t("siteLanguage.discardChanges"),
+        cancelText: t("siteLanguage.continueEditing"),
+        variant: "destructive",
+      })
+      if (!discard) return
+    }
+    loadId.current += 1
+    setOpen(false)
+  }
 
   async function save(event: FormEvent) {
     event.preventDefault()
@@ -62,6 +80,10 @@ export function SiteLanguageSettings() {
       open={open}
       onOpenChange={(nextOpen) => {
         if (saving) return
+        if (!nextOpen) {
+          void close()
+          return
+        }
         if (nextOpen) {
           const requestId = ++loadId.current
           setLanguage(locale)
@@ -74,7 +96,7 @@ export function SiteLanguageSettings() {
               const nextLanguage = isSupportedLocale(config.language) ? config.language : locale
               setLanguage(nextLanguage)
               setCurrentLanguage(nextLanguage)
-              const nextClientLanguage = isSupportedLocale(config.clientLanguage) ? config.clientLanguage : locale
+              const nextClientLanguage = isSupportedLocale(config.clientLanguage) ? config.clientLanguage : DEFAULT_CLIENT_LOCALE
               setClientLanguage(nextClientLanguage)
               setCurrentClientLanguage(nextClientLanguage)
               setReady(true)
@@ -85,8 +107,6 @@ export function SiteLanguageSettings() {
             .finally(() => {
               if (requestId === loadId.current) setLoading(false)
             })
-        } else {
-          loadId.current += 1
         }
         setOpen(nextOpen)
       }}
@@ -138,7 +158,7 @@ export function SiteLanguageSettings() {
           </fieldset>
           {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
           <DialogFooter className="rounded-b-md">
-            <Button type="button" variant="outline" disabled={saving} onClick={() => setOpen(false)}>
+            <Button type="button" variant="outline" disabled={saving} onClick={() => void close()}>
               {t("common.cancel")}
             </Button>
             <Button type="submit" disabled={saving || !ready || (language === currentLanguage && clientLanguage === currentClientLanguage)}>
