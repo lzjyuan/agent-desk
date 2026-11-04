@@ -30,9 +30,19 @@ test("localizes seeded permission display names to English", async () => {
   assert.equal(getPermissionGroupName("agentTeamSchedule", "en-US"), "Agent team schedules")
 })
 
-test("keeps original permission names for Chinese locale", async () => {
+test("localizes every built-in permission without relying on database names", async () => {
   const { getPermissionDisplayName, getPermissionGroupName } = await loadModule()
+  const source = await readFile(new URL("../../internal/pkg/constants/auth.go", import.meta.url), "utf8")
+  const permissions = [...source.matchAll(/Permission\{Name: "([^"]+)", Code: "([^"]+)", Type: "api", GroupName: "([^"]+)"/g)]
 
-  assert.equal(getPermissionDisplayName("user.view", "\u67e5\u770b\u7528\u6237", "zh-CN"), "\u67e5\u770b\u7528\u6237")
-  assert.equal(getPermissionGroupName("agentTeam", "zh-CN"), "agentTeam")
+  assert.ok(permissions.length > 100)
+  for (const [, name, code, group] of permissions) {
+    assert.equal(getPermissionDisplayName(code, "stale database name", "zh-CN"), name, code)
+    assert.notEqual(getPermissionDisplayName(code, name, "en-US"), name, code)
+    assert.notEqual(getPermissionGroupName(group, "zh-CN"), group, group)
+    assert.notEqual(getPermissionGroupName(group, "en-US"), group, group)
+  }
+
+  assert.equal(getPermissionDisplayName("custom.export", "Custom export", "zh-CN"), "Custom export")
+  assert.equal(getPermissionGroupName("custom", "zh-CN"), "custom")
 })

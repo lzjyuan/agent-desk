@@ -313,7 +313,7 @@ export function ConversationWorkbench() {
                   </span>
                 </div>
                 <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                  <span>{t("conversation.channelNumber", { id: conversation.channelId || "-" })}</span>
+                  <span>{conversation.channelName || t("conversation.channelNumber", { id: conversation.channelId || "-" })}</span>
                   {conversation.customerId ? (
                     <>
                       <span className="text-muted-foreground/60"> / </span>

@@ -407,6 +407,33 @@ func TestConversationCreateDoesNotDuplicateWelcomeMessageForExistingConversation
 	}
 }
 
+func TestConversationCreateMatchesOnlyWithinChannel(t *testing.T) {
+	db := setupMessageWelcomeTestDB(t)
+	firstAgent := createWelcomeTestAIAgent(t, db, "First game welcome")
+	secondAgent := createWelcomeTestAIAgent(t, db, "Second game welcome")
+	external := welcomeTestExternalUser("same-visitor-two-games")
+
+	first, err := ConversationService.Create(external, 11, firstAgent.ID)
+	if err != nil {
+		t.Fatalf("create first channel conversation: %v", err)
+	}
+	second, err := ConversationService.Create(external, 12, secondAgent.ID)
+	if err != nil {
+		t.Fatalf("create second channel conversation: %v", err)
+	}
+	if first.ID == second.ID || second.ChannelID != 12 || second.AIAgentID != secondAgent.ID {
+		t.Fatalf("expected separate channel conversation, got first=%+v second=%+v", first, second)
+	}
+
+	matched, err := ConversationService.Create(external, 11, firstAgent.ID)
+	if err != nil {
+		t.Fatalf("match first channel conversation: %v", err)
+	}
+	if matched.ID != first.ID {
+		t.Fatalf("matched conversation %d, want %d", matched.ID, first.ID)
+	}
+}
+
 func TestConversationCreateSkipsBlankWelcomeMessage(t *testing.T) {
 	db := setupMessageWelcomeTestDB(t)
 	aiAgent := createWelcomeTestAIAgent(t, db, "   ")

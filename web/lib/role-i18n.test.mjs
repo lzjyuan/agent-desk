@@ -30,9 +30,11 @@ test("localizes seeded role names to English by role code", async () => {
   assert.equal(getRoleDisplayName("cs_user", "\u5ba2\u670d", "en-US"), "Support agent")
 })
 
-test("keeps custom or Chinese role names unchanged", async () => {
+test("localizes seeded Chinese role names and preserves custom roles", async () => {
   const { getRoleDisplayName } = await loadModule()
 
   assert.equal(getRoleDisplayName("custom", "Ops reviewer", "en-US"), "Ops reviewer")
-  assert.equal(getRoleDisplayName("super_admin", "\u8d85\u7ea7\u7ba1\u7406\u5458", "zh-CN"), "\u8d85\u7ea7\u7ba1\u7406\u5458")
+  assert.equal(getRoleDisplayName("custom", "Ops reviewer", "zh-CN"), "Ops reviewer")
+  assert.equal(getRoleDisplayName("super_admin", "Super Admin", "zh-CN"), "\u8d85\u7ea7\u7ba1\u7406\u5458")
+  assert.equal(getRoleDisplayName("cs_user", "Support Agent", "zh-CN"), "\u5ba2\u670d")
 })

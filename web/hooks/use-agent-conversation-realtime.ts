@@ -1,12 +1,17 @@
 "use client"
 
 import { useEffect, useRef } from "react"
+import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
 import { createAdminWebSocketUrl } from "@/lib/api/admin"
 import { type AgentMessage } from "@/lib/api/agent"
-import { shouldReloadConversationListForRealtimePatch } from "@/lib/agent-conversation-realtime"
+import {
+  shouldNotifyAssignedCustomerMessage,
+  shouldReloadConversationListForRealtimePatch,
+} from "@/lib/agent-conversation-realtime"
 import { readSession } from "@/lib/auth"
+import { IMConversationStatus } from "@/lib/generated/enums"
 import {
   normalizeRealtimeMessage,
   type RealtimeConversationPatch,
@@ -31,6 +36,7 @@ type AgentRealtimeEnvelope = {
 
 export function useAgentConversationRealtime() {
   const t = useI18n()
+  const router = useRouter()
   const selectedConversationId = useAgentConversationsStore(
     (state) => state.selectedConversationId
   )
@@ -108,17 +114,27 @@ export function useAgentConversationRealtime() {
             }
             store.applyRealtimeMessageCreated(message)
 
-            const shouldNotify =
-              message.senderType === "customer" &&
-              payload?.status === 2 &&
-              (payload.currentAssigneeId ?? 0) > 0 &&
-              payload.currentAssigneeId === currentUserIdRef.current &&
-              typeof document !== "undefined" &&
-              document.visibilityState !== "visible"
+            const path = window.location.pathname.replace(/\/$/, "")
+            const isConversationPage = path === "/dashboard/conversations" || path === "/workbench"
+            const shouldNotify = shouldNotifyAssignedCustomerMessage({
+              senderType: message.senderType,
+              isActive: payload?.status === IMConversationStatus.Active,
+              currentAssigneeId: payload?.currentAssigneeId ?? 0,
+              currentUserId: currentUserIdRef.current,
+              isConversationVisible: document.visibilityState === "visible" &&
+                isConversationPage &&
+                selectedConversationIdRef.current === message.conversationId,
+            })
 
             if (shouldNotify) {
               showNotification(t("conversation.newMessage"), getNotificationBody(message), () => {
-                void store.selectConversation(message.conversationId)
+                window.focus()
+                if (!isConversationPage) {
+                  router.push(path.startsWith("/workbench") ? "/workbench" : "/dashboard/conversations")
+                }
+                void store.selectConversation(message.conversationId).catch((error) => {
+                  toast.error(error instanceof Error ? error.message : t("conversation.syncMessagesFailed"))
+                })
               })
             }
             return
@@ -173,7 +189,7 @@ export function useAgentConversationRealtime() {
       realtime.disconnect()
       subscribedConversationIdRef.current = null
     }
-  }, [setRealtimeStatus, t])
+  }, [router, setRealtimeStatus, t])
 
   useEffect(() => {
     const socket = realtimeRef.current?.getSocket()

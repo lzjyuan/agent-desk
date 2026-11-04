@@ -38,8 +38,12 @@ func ConversationGetBy(ctx *gin.Context) {
 		return
 	}
 
+	conversation := builders.BuildConversationWithLocale(item, i18nx.Locale(ctx))
+	if channel := services.ChannelService.Get(item.ChannelID); channel != nil {
+		conversation.ChannelName = channel.Name
+	}
 	detail := response.ConversationDetailResponse{
-		ConversationResponse: builders.BuildConversationWithLocale(item, i18nx.Locale(ctx)),
+		ConversationResponse: conversation,
 		Participants:         builders.BuildParticipantResponses(id),
 	}
 	httpx.WriteJSON(ctx, detail)
@@ -62,7 +66,9 @@ func ConversationPostCreate_or_match(ctx *gin.Context) {
 		httpx.WriteJSON(ctx, err)
 		return
 	}
-	httpx.WriteJSON(ctx, builders.BuildConversationWithLocale(item, i18nx.Locale(ctx)))
+	conversation := builders.BuildConversationWithLocale(item, i18nx.Locale(ctx))
+	conversation.ChannelName = channel.Name
+	httpx.WriteJSON(ctx, conversation)
 }
 
 func ConversationPostClose(ctx *gin.Context) {

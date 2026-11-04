@@ -6,6 +6,7 @@ import type { CSSProperties, ReactNode } from "react"
 import { useEffect } from "react"
 
 import { AppSidebar } from "@/components/app-sidebar"
+import { AgentRealtimeProvider } from "@/components/agent-realtime-provider"
 import { useAuth } from "@/components/auth-provider"
 import { NotificationProvider } from "@/components/notification-provider"
 import { SiteHeader } from "@/components/site-header"
@@ -62,6 +63,7 @@ export default function DashboardLayout({
       }
     >
       <NotificationProvider>
+        <AgentRealtimeProvider />
         <AppSidebar variant="inset" />
         <SidebarInset className="overflow-hidden border-l border-border/70 bg-background">
           <SiteHeader />

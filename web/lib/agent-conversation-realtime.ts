@@ -16,3 +16,23 @@ export function shouldReloadConversationListForRealtimePatch(
     listMembershipFields.has(key as keyof RealtimeConversationPatch)
   )
 }
+
+export function shouldNotifyAssignedCustomerMessage({
+  senderType,
+  isActive,
+  currentAssigneeId,
+  currentUserId,
+  isConversationVisible,
+}: {
+  senderType: string
+  isActive: boolean
+  currentAssigneeId: number
+  currentUserId: number
+  isConversationVisible: boolean
+}) {
+  return senderType === "customer" &&
+    isActive &&
+    currentAssigneeId > 0 &&
+    currentAssigneeId === currentUserId &&
+    !isConversationVisible
+}

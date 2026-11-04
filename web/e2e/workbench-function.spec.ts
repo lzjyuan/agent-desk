@@ -101,7 +101,7 @@ test.describe("support workbench", () => {
     await screenshot(page, "06-dashboard-after-switch");
     await expect(page.getByText(/管理后台|Admin Dashboard/).first()).toBeVisible();
 
-    await page.getByRole("button", { name: /贝壳AGENT|Agent Desk/i }).first().click();
+    await page.getByRole("button", { name: /客服AGENT|Agent Desk/i }).first().click();
     await expect(page.getByRole("menuitem", { name: /客服工作台|Support Workbench/ })).toBeVisible();
     await page.waitForTimeout(300);
     await screenshot(page, "07-dashboard-switcher-open");

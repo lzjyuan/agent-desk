@@ -2,6 +2,7 @@ package dashboard
 
 import (
 	"agent-desk/internal/builders"
+	"agent-desk/internal/models"
 	"agent-desk/internal/pkg/constants"
 	"agent-desk/internal/pkg/dto/request"
 	"agent-desk/internal/pkg/dto/response"
@@ -16,6 +17,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/mlogclub/simple/common/strs"
+	"github.com/mlogclub/simple/sqls"
 	"github.com/mlogclub/simple/web"
 	"github.com/spf13/cast"
 )
@@ -64,10 +66,7 @@ func ConversationAnyList(ctx *gin.Context) {
 	}
 
 	list, paging := services.ConversationService.FindPageByCnd(cnd)
-	results := make([]response.ConversationResponse, 0, len(list))
-	for _, item := range list {
-		results = append(results, builders.BuildConversationWithLocale(&item, i18nx.Locale(ctx)))
-	}
+	results := buildConversationResponses(list, i18nx.Locale(ctx))
 	httpx.WriteJSON(ctx, &web.PageResult{Results: results, Page: paging})
 }
 
@@ -93,11 +92,30 @@ func ConversationAnyConversations(ctx *gin.Context) {
 		return
 	}
 
-	results := make([]response.ConversationResponse, 0, len(list))
-	for _, item := range list {
-		results = append(results, builders.BuildConversationWithLocale(&item, i18nx.Locale(ctx)))
-	}
+	results := buildConversationResponses(list, i18nx.Locale(ctx))
 	httpx.WriteJSON(ctx, &web.PageResult{Results: results, Page: paging})
+}
+
+func buildConversationResponses(list []models.Conversation, locale string) []response.ConversationResponse {
+	results := make([]response.ConversationResponse, 0, len(list))
+	if len(list) == 0 {
+		return results
+	}
+
+	channelIDs := make([]int64, 0, len(list))
+	for _, item := range list {
+		channelIDs = append(channelIDs, item.ChannelID)
+	}
+	channelNames := make(map[int64]string)
+	for _, channel := range services.ChannelService.Find(sqls.NewCnd().In("id", channelIDs)) {
+		channelNames[channel.ID] = channel.Name
+	}
+	for i := range list {
+		result := builders.BuildConversationWithLocale(&list[i], locale)
+		result.ChannelName = channelNames[list[i].ChannelID]
+		results = append(results, result)
+	}
+	return results
 }
 
 func ConversationGetBy(ctx *gin.Context) {
@@ -116,8 +134,12 @@ func ConversationGetBy(ctx *gin.Context) {
 		return
 	}
 
+	conversation := builders.BuildConversationWithLocale(item, i18nx.Locale(ctx))
+	if channel := services.ChannelService.Get(item.ChannelID); channel != nil {
+		conversation.ChannelName = channel.Name
+	}
 	detail := response.ConversationDetailResponse{
-		ConversationResponse: builders.BuildConversationWithLocale(item, i18nx.Locale(ctx)),
+		ConversationResponse: conversation,
 		Participants:         builders.BuildParticipantResponses(id),
 	}
 	httpx.WriteJSON(ctx, detail)
