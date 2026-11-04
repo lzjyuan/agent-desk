@@ -21,6 +21,8 @@ func TestNormalizeLocale(t *testing.T) {
 		{name: "exact english", in: "en-US", want: LocaleEnUS},
 		{name: "underscore english", in: "en_US", want: LocaleEnUS},
 		{name: "short english", in: "en", want: LocaleEnUS},
+		{name: "indonesian", in: "id-ID", want: LocaleIdID},
+		{name: "short indonesian", in: "id", want: LocaleIdID},
 		{name: "unsupported falls back", in: "fr-FR", want: LocaleZhCN},
 	}
 
@@ -57,6 +59,12 @@ func TestResolveLocaleIgnoresRequestLocaleHeaders(t *testing.T) {
 
 func TestTranslateUsesConfiguredDefaultForUnsupportedLocale(t *testing.T) {
 	SetDefaultLocale(LocaleZhCN)
+	if got := TLocale(LocaleIdID, "error.e0210"); got != "Saluran tidak tersedia." {
+		t.Fatalf("Indonesian channel error = %q", got)
+	}
+	if got := TLocale(LocaleIdID, "error.e0117"); got != "The conversation does not belong to this AI Agent." {
+		t.Fatalf("English fallback = %q", got)
+	}
 	if got := TLocale(LocaleEnUS, "error.auth.expired"); got != "Your session has expired. Please sign in again." {
 		t.Fatalf("english translation = %q", got)
 	}

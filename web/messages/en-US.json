@@ -1,4 +1,18 @@
 {
+  "siteLanguage": {
+    "title": "Language settings",
+    "description": "Admin language applies to the dashboard and agent workbench. Client language applies to customer chat and the embedded widget. Other open pages update after a refresh.",
+    "label": "Admin language",
+    "clientLabel": "Client language",
+    "chinese": "简体中文 (Simplified Chinese)",
+    "english": "English",
+    "indonesian": "Bahasa Indonesia",
+    "save": "Save languages",
+    "loading": "Loading language settings…",
+    "saving": "Saving…",
+    "saved": "Language settings updated",
+    "failed": "Could not save the language settings. Try again."
+  },
   "app": {
     "brand": "Agent Desk",
     "metadataTitle": "AI Customer Support Admin",
@@ -359,6 +373,9 @@
     "syncConversationListFailed": "Could not sync the conversation list.",
     "realtimeConnectFailed": "Could not connect to the realtime service.",
     "newMessage": "New Message",
+    "messageSoundBlocked": "Your browser blocked the message sound. Click to enable sound.",
+    "enableMessageSound": "Enable sound",
+    "messageSoundFailed": "Could not play the message sound. Check the site's sound permissions and try again.",
     "filterActive": "Active",
     "filterPending": "Waiting",
     "filterAiServing": "AI Handling",
@@ -485,6 +502,7 @@
   },
   "supportChat": {
     "title": "Support",
+    "messageRecalled": "This message was recalled.",
     "agentLabel": "Support",
     "customerSelf": "You",
     "customerFallback": "G",
@@ -1373,6 +1391,7 @@
     "modelTypeLlm": "Large language model",
     "modelTypeEmbedding": "Embedding model",
     "modelTypeRerank": "Reranker",
+    "modelTypeTranslation": "Translation model",
     "enabled": "Enabled",
     "disabled": "Disabled",
     "deletedStatus": "Deleted",
@@ -3298,5 +3317,25 @@
     "deleteNavigation": "Delete item: {title}",
     "confirmDelete": "Delete navigation item \"{title}\"? It will be removed from support center navigation after you save.",
     "openURL": "Open URL"
+  },
+  "translation": {
+    "title": "Translation Assistant",
+    "autoReading": "Automatically translate customer messages",
+    "autoWriting": "Translate while typing",
+    "readingLanguage": "Reading language",
+    "writingLanguage": "Sending language",
+    "display": "Message display",
+    "both": "Original + translation",
+    "onlyTranslation": "Translation only",
+    "original": "View original",
+    "translated": "Translation",
+    "preview": "Translation preview",
+    "translating": "Translating…",
+    "failed": "Translation failed. The original is preserved.",
+    "retry": "Retry",
+    "sendTranslated": "Send translation",
+    "sendOriginal": "Send original",
+    "settingsHint": "Saved for your account in this browser. Images are not translated.",
+    "language": { "zh-CN": "Chinese", "en": "English", "id": "Indonesian" }
   }
 }

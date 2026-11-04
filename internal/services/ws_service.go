@@ -10,6 +10,7 @@ import (
 	"agent-desk/internal/pkg/i18nx"
 	"agent-desk/internal/pkg/openidentity"
 	"agent-desk/internal/pkg/utils"
+	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -115,11 +116,13 @@ func (s *wsService) upgradeConnection(ctx *gin.Context, principal *dto.AuthPrinc
 		Send:         make(chan []byte, realtimeSendBufferSize),
 	}
 	session.touch()
+	s.recordAgentOnlineActivity(session)
 
 	conn.SetReadLimit(realtimeMaxMessageSize)
 	_ = conn.SetReadDeadline(time.Now().Add(realtimePongWait))
 	conn.SetPongHandler(func(string) error {
 		session.touch()
+		s.recordAgentOnlineActivity(session)
 		return conn.SetReadDeadline(time.Now().Add(realtimePongWait))
 	})
 
@@ -167,6 +170,20 @@ func (s *wsService) upgradeConnection(ctx *gin.Context, principal *dto.AuthPrinc
 	return nil
 }
 
+func (s *wsService) recordAgentOnlineActivity(session *ClientSession) {
+	if session == nil || (session.Role != realtimeRoleAdmin && session.Role != realtimeRoleNotification) {
+		return
+	}
+	if session.Principal == nil || session.Principal.UserType != enums.UserTypeEmployee {
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := AgentProfileService.RecordOnlineActivity(ctx, session.Principal.UserID); err != nil {
+		slog.Warn("record agent online activity failed", "userId", session.Principal.UserID, "error", err)
+	}
+}
+
 func (s *wsService) readPump(session *ClientSession) {
 	defer s.closeSession(session)
 
@@ -189,6 +206,7 @@ func (s *wsService) readPump(session *ClientSession) {
 
 		switch strings.TrimSpace(input.Type) {
 		case enums.IMRealtimeClientTypePing:
+			s.recordAgentOnlineActivity(session)
 			session.enqueueEvent(s.newEvent("", RealtimePongEvent{}))
 		case enums.IMRealtimeClientTypeSubscribe:
 			topics := s.subscribeTopics(session, input.Topics)

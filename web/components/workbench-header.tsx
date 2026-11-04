@@ -8,6 +8,7 @@ import { ChangePasswordDialog } from "@/components/change-password-dialog"
 import { PaletteToggle } from "@/components/palette-toggle"
 import { RealtimeConnectionStatus } from "@/components/realtime-connection-status"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { SiteLanguageSettings } from "@/components/site-language-settings"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -37,6 +38,7 @@ export function WorkbenchHeader() {
           </div>
           <PaletteToggle />
           <ThemeToggle />
+          <SiteLanguageSettings />
           <WorkbenchUserMenu />
         </div>
       </div>

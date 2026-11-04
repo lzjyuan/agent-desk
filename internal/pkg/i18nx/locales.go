@@ -48,6 +48,11 @@ func lookup(locale string, key string) string {
 	if value := lookupLocale(locale, key); value != "" {
 		return value
 	}
+	if locale == LocaleIdID {
+		if value := lookupLocale(LocaleEnUS, key); value != "" {
+			return value
+		}
+	}
 	if locale != DefaultLocale {
 		if value := lookupLocale(DefaultLocale, key); value != "" {
 			return value

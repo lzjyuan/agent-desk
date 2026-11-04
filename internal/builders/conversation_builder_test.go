@@ -38,6 +38,14 @@ func TestLocalizeConversationSummary(t *testing.T) {
 			want:    "This message was recalled.",
 		},
 		{
+			name: "recalled message in indonesian", locale: i18nx.LocaleIdID,
+			summary: "该消息已撤回", want: "Pesan ini telah ditarik.",
+		},
+		{
+			name: "image summary in indonesian", locale: i18nx.LocaleIdID,
+			summary: "[图片]", want: "[Gambar]",
+		},
+		{
 			name:    "business text is not translated",
 			locale:  i18nx.LocaleEnUS,
 			summary: "客户反馈无法登录",
@@ -76,6 +84,10 @@ func TestLocalizeRenderableMessageContent(t *testing.T) {
 			locale:  i18nx.LocaleEnUS,
 			content: "该消息已撤回",
 			want:    "This message was recalled.",
+		},
+		{
+			name: "recalled message in indonesian", locale: i18nx.LocaleIdID,
+			content: "该消息已撤回", want: "Pesan ini telah ditarik.",
 		},
 		{
 			name:    "normal customer message is not translated",

@@ -9,8 +9,10 @@ import {
 } from "@/components/chat/shared-message-editor"
 import { useI18n } from "@/i18n/provider"
 import { fetchQuickReplyListAll, type AdminQuickReply } from "@/lib/api/admin"
+import { useDraftTranslation } from "./translation-assistant"
 
 type AgentMessageEditorProps = {
+  conversationId: number
   disabled?: boolean
   uploadingAsset?: boolean
   onSend: (html: string) => Promise<void>
@@ -19,6 +21,7 @@ type AgentMessageEditorProps = {
 }
 
 export function AgentMessageEditor({
+  conversationId,
   disabled = false,
   uploadingAsset = false,
   onSend,
@@ -26,6 +29,7 @@ export function AgentMessageEditor({
   onSendAttachment,
 }: AgentMessageEditorProps) {
   const t = useI18n()
+  const translation = useDraftTranslation(conversationId)
   const [quickReplies, setQuickReplies] = useState<AdminQuickReply[]>([])
   const [loadingQuickReplies, setLoadingQuickReplies] = useState(true)
   const [quickReplyPickerOpen, setQuickReplyPickerOpen] = useState(false)
@@ -56,6 +60,7 @@ export function AgentMessageEditor({
   return (
     <SharedMessageEditor
       variant="agent"
+      {...translation}
       disabled={disabled}
       uploadingAsset={uploadingAsset}
       quickReplies={{

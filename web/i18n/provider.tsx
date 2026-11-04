@@ -29,7 +29,7 @@ const LocaleContext = createContext<LocaleContextValue>({
   t: (key) => key,
 })
 
-export function AppI18nProvider({ children }: { children: ReactNode }) {
+export function AppI18nProvider({ children, client = false }: { children: ReactNode; client?: boolean }) {
   const [locale, setLocaleState] = useState<AppLocale>(DEFAULT_LOCALE)
   const [isLocaleReady, setIsLocaleReady] = useState(false)
 
@@ -37,7 +37,7 @@ export function AppI18nProvider({ children }: { children: ReactNode }) {
     let cancelled = false
 
     fetchPublicConfig()
-      .then((config) => configureLocale(config.language))
+      .then((config) => configureLocale(client ? config.clientLanguage : config.language))
       .catch(() => configureLocale(DEFAULT_LOCALE))
       .then((configuredLocale) => {
         if (cancelled) {
@@ -52,9 +52,10 @@ export function AppI18nProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [client])
 
   useEffect(() => {
+    document.documentElement.lang = locale
     document.title = translateMessage(locale, "app.metadataTitle")
   }, [locale])
 
@@ -62,7 +63,7 @@ export function AppI18nProvider({ children }: { children: ReactNode }) {
     () => ({
       locale,
       t: (key, values) => translateMessage(locale, key, values),
-      setLocale: () => {},
+      setLocale: (nextLocale) => setLocaleState(configureLocale(nextLocale)),
     }),
     [locale]
   )

@@ -129,6 +129,10 @@ func registerApiSupportRoutes(group *gin.RouterGroup, limits publicRateLimits) {
 	group.POST("/community/reactions/toggle", api.ReactionPostToggle)
 }
 
+func registerDashboardSystemConfigRoutes(group *gin.RouterGroup) {
+	group.POST("/language", dashboard.SystemConfigPostLanguage)
+}
+
 func registerDashboardSupportConfigRoutes(group *gin.RouterGroup) {
 	group.GET("", dashboard.SupportConfigGetConfig)
 	group.POST("/save", dashboard.SupportConfigPostSave)
@@ -218,6 +222,7 @@ func registerDashboardTagRoutes(group *gin.RouterGroup) {
 }
 
 func registerDashboardConversationRoutes(group *gin.RouterGroup) {
+	group.POST("/translate", dashboard.ConversationPostTranslate)
 	group.GET("/:id", dashboard.ConversationGetBy)
 	group.POST("/add_tag", dashboard.ConversationPostAdd_tag)
 	group.POST("/assign", dashboard.ConversationPostAssign)

@@ -1,6 +1,7 @@
 "use client"
 
 import { create } from "zustand"
+import { toast } from "sonner"
 
 import {
   closeImConversation,
@@ -22,6 +23,7 @@ import {
   createImRealtimeConnection,
   type ImRealtimeEnvelope,
 } from "@/lib/im-realtime"
+import { applyRecalledMessage, preserveRecalledMessage } from "@/lib/im-message-recall"
 import {
   cursorFromLoadedImMessages,
   hasMoreAfterLatestImMessageMerge,
@@ -36,6 +38,7 @@ import {
 } from "@/lib/im-realtime-state"
 import { summarizeIMMessage } from "@/lib/im-message"
 import { createRealtimeConnectionManager } from "@/lib/realtime-connection"
+import { playMessageSound } from "@/lib/services/message-sound"
 import { generateUUID } from "@/lib/utils"
 import {
   readSupportChatRuntimeConfig,
@@ -194,11 +197,34 @@ export const useSupportChatStore = create<SupportChatStore>((set, get) => {
           void get().syncLatestMessages()
           return
         }
+        const isNewMessage = !get().messages.some((item) => item.id === message.id)
         set((state) => ({
           messages: mergeImMessagesByIdAsc(state.messages, [message]),
           conversation: patchConversationWithMessage(state.conversation, message),
         }))
+        if (isNewMessage && (message.senderType === "agent" || message.senderType === "ai")) {
+          const soundKey = `${conversationId}:${message.id}`
+          void playMessageSound(soundKey, "customer").catch((error) => {
+            if (error instanceof DOMException && error.name === "NotAllowedError") {
+              toast(t("conversation.messageSoundBlocked"), {
+                id: "customer-message-sound",
+                duration: Infinity,
+                action: {
+                  label: t("conversation.enableMessageSound"),
+                  onClick: () => {
+                    void playMessageSound(soundKey, "customer").catch(() => {
+                      toast.error(t("conversation.messageSoundFailed"))
+                    })
+                  },
+                },
+              })
+            } else {
+              toast.error(t("conversation.messageSoundFailed"), { id: "customer-message-sound" })
+            }
+          })
+        }
         if (
+          isNewMessage &&
           message.senderType !== "customer" &&
           typeof document !== "undefined" &&
           document.visibilityState !== "visible"
@@ -209,6 +235,14 @@ export const useSupportChatStore = create<SupportChatStore>((set, get) => {
             state.setIsVisible(true)
           })
         }
+        return
+      }
+
+      const recalledMessageId = payload?.messageId ?? 0
+      if (event.type === "message.recalled" && recalledMessageId > 0) {
+        set((state) => ({
+          messages: applyRecalledMessage(state.messages, recalledMessageId, payload?.recalledAt),
+        }))
         return
       }
 
@@ -348,10 +382,13 @@ export const useSupportChatStore = create<SupportChatStore>((set, get) => {
           limit: DEFAULT_PAGE_LIMIT,
         })
         const results = ensureMessageList(page.results)
-        set({
-          messages: results,
-          messagesCursor: cursorFromLoadedImMessages(results) || page.cursor || "",
-          messagesHasMore: Boolean(page.hasMore) || results.length >= DEFAULT_PAGE_LIMIT,
+        set((state) => {
+          const recalled = new Map(state.messages.filter((message) => message.sendStatus === 6 || message.recalledAt).map((message) => [message.id, message]))
+          return {
+            messages: results.map((message) => preserveRecalledMessage(recalled.get(message.id), message)),
+            messagesCursor: cursorFromLoadedImMessages(results) || page.cursor || "",
+            messagesHasMore: Boolean(page.hasMore) || results.length >= DEFAULT_PAGE_LIMIT,
+          }
         })
       } catch (error) {
         set({

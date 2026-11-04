@@ -81,6 +81,18 @@ func (e *SystemConfigValidationError) FieldErrorsLocale(locale string) []respons
 }
 
 var systemConfigDefinitions = map[string]map[string]systemConfigDefinition{
+	"general": {
+		"language": {
+			GroupCode: "general", Key: "language",
+			TitleKey: "systemConfig.general.language.title", DescriptionKey: "systemConfig.general.language.description",
+			DefaultValue: i18nx.LocaleZhCN, Validator: siteLanguageValidator{},
+		},
+		"clientLanguage": {
+			GroupCode: "general", Key: "clientLanguage",
+			TitleKey: "systemConfig.general.clientLanguage.title", DescriptionKey: "systemConfig.general.clientLanguage.description",
+			DefaultValue: i18nx.LocaleZhCN, Validator: clientLanguageValidator{},
+		},
+	},
 	systemConfigGroupSupportCenter: {
 		systemConfigKeySupportNavMenu: {
 			GroupCode:      systemConfigGroupSupportCenter,

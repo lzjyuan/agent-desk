@@ -1,11 +1,13 @@
 import { DEFAULT_LOCALE, type AppLocale, readStoredLocale } from "@/i18n/config"
 import enUSMessages from "@/messages/en-US.json"
+import idIDMessages from "@/messages/id-ID.json"
 import zhCNMessages from "@/messages/zh-CN.json"
 
 const messages = {
   "zh-CN": zhCNMessages,
   "en-US": enUSMessages,
-} satisfies Record<AppLocale, typeof zhCNMessages>
+  "id-ID": idIDMessages,
+} satisfies Record<AppLocale, object>
 
 export function translateMessage(
   locale: AppLocale,
@@ -16,7 +18,7 @@ export function translateMessage(
   if (typeof value === "string") {
     return formatMessage(value, values)
   }
-  const fallback = getMessageValue(messages[DEFAULT_LOCALE], key)
+  const fallback = getMessageValue(messages[locale === "id-ID" ? "en-US" : DEFAULT_LOCALE], key)
   return typeof fallback === "string" ? formatMessage(fallback, values) : key
 }
 

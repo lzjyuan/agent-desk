@@ -72,20 +72,25 @@ func BuildConversationWithLocale(item *models.Conversation, locale string) respo
 }
 
 func localizeConversationSummary(locale string, summary string) string {
-	if i18nx.NormalizeLocale(locale) != i18nx.LocaleEnUS {
+	locale = i18nx.NormalizeLocale(locale)
+	if locale != i18nx.LocaleEnUS && locale != i18nx.LocaleIdID {
 		return summary
+	}
+	image, attachment, recalled := "[Image]", "[Attachment]", "This message was recalled."
+	if locale == i18nx.LocaleIdID {
+		image, attachment, recalled = "[Gambar]", "[Lampiran]", "Pesan ini telah ditarik."
 	}
 	switch {
 	case summary == "[图片]":
-		return "[Image]"
+		return image
 	case strings.HasPrefix(summary, "[图片] "):
-		return "[Image] " + strings.TrimPrefix(summary, "[图片] ")
+		return image + " " + strings.TrimPrefix(summary, "[图片] ")
 	case summary == "[附件]":
-		return "[Attachment]"
+		return attachment
 	case strings.HasPrefix(summary, "[附件] "):
-		return "[Attachment] " + strings.TrimPrefix(summary, "[附件] ")
+		return attachment + " " + strings.TrimPrefix(summary, "[附件] ")
 	case summary == "该消息已撤回":
-		return "This message was recalled."
+		return recalled
 	default:
 		return summary
 	}
@@ -206,11 +211,13 @@ func BuildMessageWithReadStatesAndLocale(item *models.Message, agentReadState, c
 }
 
 func localizeRenderableMessageContent(locale string, content string) string {
-	if i18nx.NormalizeLocale(locale) != i18nx.LocaleEnUS {
-		return content
-	}
 	if content == "该消息已撤回" {
-		return "This message was recalled."
+		switch i18nx.NormalizeLocale(locale) {
+		case i18nx.LocaleEnUS:
+			return "This message was recalled."
+		case i18nx.LocaleIdID:
+			return "Pesan ini telah ditarik."
+		}
 	}
 	return content
 }

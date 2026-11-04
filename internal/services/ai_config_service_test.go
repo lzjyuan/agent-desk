@@ -80,3 +80,34 @@ func setupAIConfigServiceTestDB(t *testing.T) *gorm.DB {
 	sqls.SetDB(db)
 	return db
 }
+
+func TestTranslationConfigEnableIsIndependent(t *testing.T) {
+	db := setupAIConfigServiceTestDB(t)
+	operator := &dto.AuthPrincipal{UserID: 1, Username: "admin"}
+	chat := &models.AIConfig{
+		Name: "customer-replies", ModelType: enums.AIModelTypeLLM, Status: enums.StatusOk,
+	}
+	if err := db.Create(chat).Error; err != nil {
+		t.Fatal(err)
+	}
+	var previousID int64
+	for _, name := range []string{"translation-one", "translation-two"} {
+		item, err := AIConfigService.CreateAIConfig(request.CreateAIConfigRequest{
+			Name: name, ModelType: enums.AIModelType("translation"),
+			Provider: enums.AIProviderOpenAI, BaseURL: "https://example.com/v1", ModelName: "translation-test",
+		}, operator)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := AIConfigService.UpdateStatus(item.ID, enums.StatusOk, operator); err != nil {
+			t.Fatal(err)
+		}
+		if AIConfigService.Get(chat.ID).Status != enums.StatusOk || AIConfigService.Get(item.ID).Status != enums.StatusOk {
+			t.Fatal("enabling translation disabled the customer model")
+		}
+		if previousID > 0 && AIConfigService.Get(previousID).Status != enums.StatusDisabled {
+			t.Fatal("previous translation configuration was not disabled")
+		}
+		previousID = item.ID
+	}
+}

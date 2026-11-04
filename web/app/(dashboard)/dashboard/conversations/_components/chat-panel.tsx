@@ -65,6 +65,7 @@ import {
 } from "@/lib/stores/agent-conversations";
 import { formatDateTime } from "@/lib/utils";
 import { AgentMessageEditor } from "./agent-message-editor";
+import { ReadingTranslation, TranslationToolbar } from "./translation-assistant";
 
 const EMPTY_AGENT_MESSAGES: AgentMessage[] = [];
 
@@ -256,12 +257,16 @@ export function ChatPanel() {
   };
 
   const handleSend = async (html: string) => {
-    if (!conversation || sending || isClosedConversation) return;
     try {
+      if (!conversation || sending || isClosedConversation ||
+        useAgentConversationsStore.getState().selectedConversationId !== conversation.id) {
+        throw new Error(t("conversation.sendMessageFailed"));
+      }
       shouldStickToBottomRef.current = true;
-      await sendMessage(html);
+      if (!await sendMessage(html)) throw new Error(t("conversation.sendMessageFailed"));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t("conversation.sendMessageFailed"));
+      throw error;
     }
   };
 
@@ -311,7 +316,7 @@ export function ChatPanel() {
         setWorkflowRunLoading(false);
       }
     },
-    [],
+    [t],
   );
 
   if (!conversation) {
@@ -422,6 +427,8 @@ export function ChatPanel() {
         <div className="flex h-full min-h-0 flex-col">
           <div className="min-h-0 flex-1">
             <AgentMessageEditor
+              key={conversation.id}
+              conversationId={conversation.id}
               disabled={!conversation || sending}
               uploadingAsset={uploadingAsset}
               onSend={handleSend}
@@ -447,6 +454,7 @@ export function ChatPanel() {
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
+      <TranslationToolbar />
       {isLgUp ? (
         <ResizablePanelGroup
           orientation="vertical"
@@ -700,12 +708,19 @@ const MessageItem = memo(
                   isRecalled ? recalledBubbleClassName : bubbleClassName
                 }`}
               >
-                <ImMessageHTML
+                <ReadingTranslation
+                  message={message}
                   html={htmlContent}
-                  className={isRecalled ? recalledHtmlClassName : htmlClassName}
                   onImageSettled={onImageSettled}
-                  onImageClick={isRecalled ? undefined : openImageLightbox}
-                />
+                  onImageClick={openImageLightbox}
+                >
+                  <ImMessageHTML
+                    html={htmlContent}
+                    className={isRecalled ? recalledHtmlClassName : htmlClassName}
+                    onImageSettled={onImageSettled}
+                    onImageClick={isRecalled ? undefined : openImageLightbox}
+                  />
+                </ReadingTranslation>
               </ConversationMessageBubble>
               <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
                 <span>{formatDateTime(message.sentAt || "")}</span>

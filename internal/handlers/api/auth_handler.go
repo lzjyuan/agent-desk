@@ -39,8 +39,10 @@ func Login(ctx *gin.Context) {
 
 func PublicConfig(ctx *gin.Context) {
 	cfg := config.Current()
+	language, clientLanguage := services.SystemConfigService.GetLanguages()
 	httpx.WriteJSON(ctx, &response.PublicConfigResponse{
-		Language:             cfg.LanguageOrDefault(),
+		Language:             language,
+		ClientLanguage:       clientLanguage,
 		CompanyName:          cfg.Server.CompanyName,
 		CompanyLogoURL:       cfg.Server.CompanyLogoURL,
 		PasswordLoginEnabled: cfg.Auth.IsPasswordLoginEnabled(),

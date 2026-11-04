@@ -249,6 +249,7 @@ const (
 	IMRealtimeEventMessageRecalled         = "message.recalled"
 	IMRealtimeEventConversationCreated     = "conversation.created"
 	IMRealtimeEventConversationUpdated     = "conversation.updated"
+	IMRealtimeEventConversationPending     = "conversation.pending"
 	IMRealtimeEventConversationAssigned    = "conversation.assigned"
 	IMRealtimeEventConversationTransferred = "conversation.transferred"
 	IMRealtimeEventConversationClosed      = "conversation.closed"

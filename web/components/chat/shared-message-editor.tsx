@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState, type ChangeEvent } from "react"
+import { useEffect, useEffectEvent, useRef, useState, type ChangeEvent, type ReactNode } from "react"
 import Placeholder from "@tiptap/extension-placeholder"
 import { EditorContent, useEditor } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
@@ -63,6 +63,11 @@ type SharedMessageEditorProps = {
   onSend: (html: string) => Promise<void>
   onUploadImage: (file: File) => Promise<UploadedMessageEditorImage | null>
   onSendAttachment: (file: File) => Promise<void>
+  onDraftChange?: (html: string, composing: boolean) => void
+  sendOverride?: (html: string) => string | null
+  sendDisabled?: boolean
+  sendLabel?: string
+  footer?: ReactNode
 }
 
 export function SharedMessageEditor({
@@ -74,9 +79,18 @@ export function SharedMessageEditor({
   onSend,
   onUploadImage,
   onSendAttachment,
+  onDraftChange,
+  sendOverride,
+  sendDisabled = false,
+  sendLabel,
+  footer,
 }: SharedMessageEditorProps) {
   const t = useI18n()
   const [localUploading, setLocalUploading] = useState(false)
+  const [localSending, setLocalSending] = useState(false)
+  const sendingRef = useRef(false)
+  const composingRef = useRef(false)
+  const onDraftChangeRef = useRef(onDraftChange)
   const imageInputRef = useRef<HTMLInputElement | null>(null)
   const attachmentInputRef = useRef<HTMLInputElement | null>(null)
   const onSendRef = useRef(onSend)
@@ -90,6 +104,7 @@ export function SharedMessageEditor({
   const isUploading = uploadingAsset || (manageLocalUploading && localUploading)
 
   placeholderRef.current = t("conversation.editorPlaceholder")
+  onDraftChangeRef.current = onDraftChange
 
   useEffect(() => {
     const objectUrls = objectUrlsRef.current
@@ -131,13 +146,26 @@ export function SharedMessageEditor({
       attributes: {
         class: getEditorClassName(variant),
       },
-      handleKeyDown: (_view, event) => {
+      handleKeyDown: (view, event) => {
+        if (event.isComposing || view.composing || composingRef.current) return false
         if (event.key === "Enter" && !event.shiftKey) {
           event.preventDefault()
           void handleSend()
           return true
         }
         return false
+      },
+      handleDOMEvents: {
+        compositionstart: () => {
+          composingRef.current = true
+          publishDraft(true)
+          return false
+        },
+        compositionend: () => {
+          composingRef.current = false
+          queueMicrotask(() => publishDraft(false))
+          return false
+        },
       },
       handlePaste: (_view, event) => {
         if (disabled || isUploading) {
@@ -154,12 +182,29 @@ export function SharedMessageEditor({
     },
   })
 
+  function publishDraft(composing = composingRef.current) {
+    if (!editor || editor.isDestroyed) return
+    const raw = editor.getHTML()
+    onDraftChangeRef.current?.(
+      hasUploadingEditorImages(raw, uploadedImagesRef.current) ? "" : buildSendableEditorHTML(raw, uploadedImagesRef.current),
+      composing,
+    )
+  }
+
+  const onEditorUpdate = useEffectEvent(() => publishDraft())
+  useEffect(() => {
+    if (!editor) return
+    const handleUpdate = () => onEditorUpdate()
+    editor.on("update", handleUpdate)
+    return () => { editor.off("update", handleUpdate) }
+  }, [editor])
+
   useEffect(() => {
     if (!editor) {
       return
     }
-    editor.setEditable(!disabled && !isUploading)
-  }, [disabled, editor, isUploading])
+    editor.setEditable(!disabled && !isUploading && !localSending)
+  }, [disabled, editor, isUploading, localSending])
 
   useEffect(() => {
     if (!editor || disabled || isUploading || !shouldRestoreFocusRef.current) {
@@ -170,22 +215,35 @@ export function SharedMessageEditor({
     })
   }, [disabled, editor, isUploading])
 
-  async function handleSend() {
-    if (!editor || disabled || isUploading) {
+  async function handleSend(original = false) {
+    if (!editor || disabled || isUploading || sendingRef.current || composingRef.current) {
       return
     }
     const rawHTML = editor.getHTML()
     if (hasUploadingEditorImages(rawHTML, uploadedImagesRef.current)) {
       return
     }
-    const html = buildSendableEditorHTML(rawHTML, uploadedImagesRef.current)
+    const source = buildSendableEditorHTML(rawHTML, uploadedImagesRef.current)
+    const html = !original && sendOverride ? sendOverride(source) : source
+    if (html === null || (!original && sendDisabled)) return
     if (!isMeaningfulHTML(html)) {
       return
     }
-    await onSendRef.current(html)
-    editor.commands.clearContent(true)
-    revokeEditorObjectUrls(objectUrlsRef.current)
-    uploadedImagesRef.current.clear()
+    sendingRef.current = true
+    setLocalSending(true)
+    try {
+      await onSendRef.current(html)
+      if (editor.isDestroyed) return
+      editor.commands.clearContent(true)
+      revokeEditorObjectUrls(objectUrlsRef.current)
+      uploadedImagesRef.current.clear()
+    } catch {
+      // The caller reports send errors; keep both the draft and uploaded resources.
+      return
+    } finally {
+      sendingRef.current = false
+      setLocalSending(false)
+    }
     if (!isCustomer) {
       requestAnimationFrame(() => {
         editor.commands.focus("end")
@@ -237,6 +295,7 @@ export function SharedMessageEditor({
         uploaded,
         uploadedImagesRef.current
       )
+      publishDraft()
     } finally {
       setLocalUploading(false)
       requestAnimationFrame(() => {
@@ -312,6 +371,7 @@ export function SharedMessageEditor({
           <EditorContent editor={editor} className="h-full" />
         </div>
       )}
+      {footer}
       <div className={getToolbarClassName(variant)}>
         <div className={isCustomer ? "flex items-center gap-1.5" : "flex items-center gap-1"}>
           <Button
@@ -394,15 +454,26 @@ export function SharedMessageEditor({
           ) : null}
         </div>
         <div className="flex items-center gap-2">
-          <p className={isCustomer ? "hidden text-[10px] text-muted-foreground sm:block" : "text-xs text-muted-foreground"}>
+          <p className="hidden text-xs text-muted-foreground sm:block">
             {t("conversation.enterToSend")}
           </p>
+          {!isCustomer && sendOverride ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              disabled={disabled || isUploading || localSending}
+              onClick={() => void handleSend(true)}
+            >
+              {t("translation.sendOriginal")}
+            </Button>
+          ) : null}
           {isCustomer ? (
             <Button
               type="button"
               size="icon"
               onClick={() => void handleSend()}
-              disabled={disabled || isUploading}
+              disabled={disabled || isUploading || localSending}
               aria-label={t("conversation.send")}
               title={t("conversation.send")}
               className="bg-primary text-white shadow-[0_10px_20px_color-mix(in_srgb,var(--primary)_24%,transparent)] hover:bg-primary hover:brightness-105"
@@ -414,10 +485,10 @@ export function SharedMessageEditor({
               type="button"
               size="sm"
               onClick={() => void handleSend()}
-              disabled={disabled || isUploading}
+              disabled={disabled || isUploading || localSending || sendDisabled}
             >
               <SendIcon className="mr-1 size-4" />
-              {isUploading ? t("conversation.uploading") : t("conversation.send")}
+              {isUploading ? t("conversation.uploading") : sendLabel || t("conversation.send")}
             </Button>
           )}
         </div>

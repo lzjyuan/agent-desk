@@ -72,7 +72,7 @@ function injectWidget(config: AgentDeskConfig) {
 
   const script = document.createElement("script")
   script.async = true
-  script.src = `${window.location.origin}/sdk/agent-desk-sdk.min.js`
+  script.src = `${window.location.origin}/sdk/agents-service-sdk.min.js`
   script.dataset.agentDeskWidget = "script"
   document.body.appendChild(script)
 }
@@ -187,8 +187,8 @@ export function SupportWidgetDemo() {
 
   const snippet = useMemo(() => {
     const scriptSrc = origin
-      ? `${origin}/sdk/agent-desk-sdk.min.js`
-      : "/sdk/agent-desk-sdk.min.js"
+      ? `${origin}/sdk/agents-service-sdk.min.js`
+      : "/sdk/agents-service-sdk.min.js"
 
     const configLines = [`    channelId: "${config.channelId || ""}"`]
     if (config.authMode === "jwt") {

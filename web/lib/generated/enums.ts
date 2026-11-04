@@ -26,11 +26,13 @@ export enum AIModelType {
   LLM = "llm",
   Embedding = "embedding",
   Rerank = "rerank",
+  Translation = "translation",
 }
 export const AIModelTypeLabels: Record<AIModelType, string> = {
   [AIModelType.LLM]: "大语言模型",
   [AIModelType.Embedding]: "向量模型",
   [AIModelType.Rerank]: "重排序模型",
+  [AIModelType.Translation]: "翻译模型",
 }
 
 export enum AIProvider {
@@ -77,9 +79,13 @@ export enum ExternalSource {
   Guest = "guest",
   WxWorkKF = "wxwork_kf",
   User = "user",
+  External = "external",
   Telegram = "telegram",
   ZaloOA = "zalo_oa",
-  External = "external",
+  Slack = "slack",
+  Discord = "discord",
+  Lark = "lark",
+  Email = "email",
 }
 export const ExternalSourceLabels: Record<ExternalSource, string> = {
   [ExternalSource.Guest]: "访客",
@@ -88,6 +94,10 @@ export const ExternalSourceLabels: Record<ExternalSource, string> = {
   [ExternalSource.External]: "外部用户",
   [ExternalSource.Telegram]: "Telegram",
   [ExternalSource.ZaloOA]: "Zalo OA",
+  [ExternalSource.Slack]: "Slack",
+  [ExternalSource.Discord]: "Discord",
+  [ExternalSource.Lark]: "Lark",
+  [ExternalSource.Email]: "Email",
 }
 
 export enum Gender {

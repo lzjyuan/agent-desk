@@ -8,6 +8,7 @@ import { createAdminWebSocketUrl } from "@/lib/api/admin"
 import { type AgentMessage } from "@/lib/api/agent"
 import {
   shouldNotifyAssignedCustomerMessage,
+  shouldNotifyConversationArrival,
   shouldReloadConversationListForRealtimePatch,
 } from "@/lib/agent-conversation-realtime"
 import { readSession } from "@/lib/auth"
@@ -18,6 +19,7 @@ import {
   type RealtimeMessageCreatedPayload,
 } from "@/lib/im-realtime-state"
 import { createRealtimeConnectionManager } from "@/lib/realtime-connection"
+import { playMessageSound } from "@/lib/services/message-sound"
 import { getNotificationBody, showNotification } from "@/lib/services/notification"
 import { useAgentConversationsStore } from "@/lib/stores/agent-conversations"
 import { useI18n } from "@/i18n/provider"
@@ -53,6 +55,26 @@ export function useAgentConversationRealtime() {
   }, [selectedConversationId])
 
   useEffect(() => {
+    const playSound = (key: string, sound: "message" | "notice" = "message") => {
+      void playMessageSound(key, sound).catch((error) => {
+        if (error instanceof DOMException && error.name === "NotAllowedError") {
+          toast(t("conversation.messageSoundBlocked"), {
+            id: "agent-message-sound",
+            duration: Infinity,
+            action: {
+              label: t("conversation.enableMessageSound"),
+              onClick: () => {
+                void playMessageSound(key, sound).catch(() => {
+                  toast.error(t("conversation.messageSoundFailed"))
+                })
+              },
+            },
+          })
+        } else {
+          toast.error(t("conversation.messageSoundFailed"), { id: "agent-message-sound" })
+        }
+      })
+    }
     const realtime = createRealtimeConnectionManager({
       createSocket: () => new WebSocket(createAdminWebSocketUrl()),
       onStatusChange: setRealtimeStatus,
@@ -116,26 +138,30 @@ export function useAgentConversationRealtime() {
 
             const path = window.location.pathname.replace(/\/$/, "")
             const isConversationPage = path === "/dashboard/conversations" || path === "/workbench"
+            const isConversationVisible = document.visibilityState === "visible" &&
+              isConversationPage &&
+              selectedConversationIdRef.current === message.conversationId
             const shouldNotify = shouldNotifyAssignedCustomerMessage({
               senderType: message.senderType,
               isActive: payload?.status === IMConversationStatus.Active,
               currentAssigneeId: payload?.currentAssigneeId ?? 0,
               currentUserId: currentUserIdRef.current,
-              isConversationVisible: document.visibilityState === "visible" &&
-                isConversationPage &&
-                selectedConversationIdRef.current === message.conversationId,
             })
 
             if (shouldNotify) {
-              showNotification(t("conversation.newMessage"), getNotificationBody(message), () => {
-                window.focus()
-                if (!isConversationPage) {
-                  router.push(path.startsWith("/workbench") ? "/workbench" : "/dashboard/conversations")
-                }
-                void store.selectConversation(message.conversationId).catch((error) => {
-                  toast.error(error instanceof Error ? error.message : t("conversation.syncMessagesFailed"))
+              const messageKey = `${currentUserIdRef.current}:${message.conversationId}:${message.id}`
+              playSound(messageKey)
+              if (!isConversationVisible) {
+                showNotification(t("conversation.newMessage"), getNotificationBody(message), () => {
+                  window.focus()
+                  if (!isConversationPage) {
+                    router.push(path.startsWith("/workbench") ? "/workbench" : "/dashboard/conversations")
+                  }
+                  void store.selectConversation(message.conversationId).catch((error) => {
+                    toast.error(error instanceof Error ? error.message : t("conversation.syncMessagesFailed"))
+                  })
                 })
-              })
+              }
             }
             return
           }
@@ -149,6 +175,16 @@ export function useAgentConversationRealtime() {
           }
 
           if (eventType.startsWith("conversation.") && payload) {
+            if (conversationId > 0 && shouldNotifyConversationArrival({
+              eventType,
+              isPending: payload.status === IMConversationStatus.Pending,
+              isActive: payload.status === IMConversationStatus.Active,
+              currentAssigneeId: payload.currentAssigneeId ?? 0,
+              currentUserId: currentUserIdRef.current,
+              canViewConversations: readSession()?.permissions.includes("conversation.view") ?? false,
+            })) {
+              playSound(`arrival:${currentUserIdRef.current}:${conversationId}:${eventId || eventType}`, "notice")
+            }
             store.applyRealtimeConversationChanged(payload)
             if (shouldReloadConversationListForRealtimePatch(payload)) {
               void store.resyncRealtimeData(conversationId).catch((error) => {

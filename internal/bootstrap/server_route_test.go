@@ -112,7 +112,6 @@ func TestNewServerHealthEndpointIsPublic(t *testing.T) {
 
 func TestNewServerExposesPublicConfig(t *testing.T) {
 	config.SetCurrent(&config.Config{
-		Language: "zh-CN",
 		Storage: config.StorageConfig{
 			Local: config.LocalStorageConfig{
 				Root:    "storage",

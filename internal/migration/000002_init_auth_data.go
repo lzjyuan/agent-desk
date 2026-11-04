@@ -189,7 +189,7 @@ func ensureBootstrapAdmin(tx *gorm.DB, superAdminRole *models.Role) error {
 	password := constants.BootstrapAdminPassword
 
 	if strings.TrimSpace(password) == "" {
-		password = "ChangeMe123!"
+		password = "Admin@123.."
 		slog.Warn("bootstrap admin password is empty, using default password", "username", username)
 	}
 

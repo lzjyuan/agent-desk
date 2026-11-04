@@ -62,7 +62,7 @@ func TestAIHandoffPublishesFinalTeamPoolConversationEvent(t *testing.T) {
 		t.Fatalf("expected team_pool decision, got %+v", result)
 	}
 
-	event := findHumanDispatchRealtimeEvent(t, session, enums.IMRealtimeEventConversationUpdated, func(event humanDispatchRealtimeEvent) bool {
+	event := findHumanDispatchRealtimeEvent(t, session, "conversation.pending", func(event humanDispatchRealtimeEvent) bool {
 		return event.Data["currentTeamId"] == float64(1)
 	})
 	if event.Data["conversationId"] != float64(conversation.ID) {
@@ -73,6 +73,26 @@ func TestAIHandoffPublishesFinalTeamPoolConversationEvent(t *testing.T) {
 	}
 	if value, ok := event.Data["currentAssigneeId"]; ok && value != float64(0) {
 		t.Fatalf("expected no assignee in updated event, got %+v", event.Data["currentAssigneeId"])
+	}
+}
+
+func TestHumanOnlyCreatePublishesGlobalPendingConversationEvent(t *testing.T) {
+	db := setupHumanDispatchRealtimeTestDB(t)
+	WsService = newWsService()
+	session := captureHumanDispatchRealtimeSession(t, "admin:all")
+	aiAgent := createHumanDispatchRealtimeAIAgent(t, db, "")
+	conversation := createHumanDispatchRealtimeConversation(t, db, aiAgent.ID)
+
+	result, err := ConversationHumanDispatchService.ApplyHumanOnlyCreate(conversation.ID, aiAgent)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Decision != HandoffDecisionGlobalPool {
+		t.Fatalf("expected global pool, got %+v", result)
+	}
+	event := findHumanDispatchRealtimeEvent(t, session, "conversation.pending")
+	if event.Data["conversationId"] != float64(conversation.ID) || event.Data["status"] != float64(enums.IMConversationStatusPending) {
+		t.Fatalf("expected pending conversation, got %+v", event.Data)
 	}
 }
 

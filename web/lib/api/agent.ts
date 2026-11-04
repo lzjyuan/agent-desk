@@ -1,5 +1,22 @@
 import { request } from "@/lib/api/client"
 
+export type TranslationLanguage = "zh-CN" | "en" | "id"
+export type ConversationTranslation = {
+  translatedText: string
+  translatedHTML?: string
+  targetLanguage: TranslationLanguage
+}
+
+export function translateConversation(
+  input: { conversationId: number; targetLanguage: TranslationLanguage } &
+    ({ messageId: number } | { text: string; format: "text" | "html" }),
+  signal: AbortSignal,
+) {
+  return request<ConversationTranslation>("/api/dashboard/conversation/translate", {
+    method: "POST", body: JSON.stringify(input), signal,
+  })
+}
+
 export type Paging = {
   page: number
   limit: number

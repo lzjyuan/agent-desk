@@ -26,7 +26,7 @@ function mountSupportWidget(config: AgentDeskConfig) {
 
   const script = document.createElement("script")
   script.async = true
-  script.src = "/sdk/agent-desk-sdk.min.js"
+  script.src = "/sdk/agents-service-sdk.min.js"
   script.dataset.agentDeskWidget = "support-platform-script"
   document.body.appendChild(script)
 }

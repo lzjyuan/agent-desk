@@ -21,7 +21,7 @@ func Init(configPath string) error {
 		return err
 	}
 	config.SetCurrent(cfg)
-	i18nx.SetDefaultLocale(cfg.LanguageOrDefault())
+	i18nx.SetDefaultLocale(i18nx.LocaleZhCN)
 
 	logx.Init(logx.Config{
 		Level:     cfg.Logger.Level,

@@ -17,7 +17,7 @@ const (
 
 const (
 	BootstrapAdminUsername = "admin"
-	BootstrapAdminPassword = "ChangeMe123!"
+	BootstrapAdminPassword = "Admin@123.."
 	BootstrapAdminNickname = "Super Admin"
 )
 
@@ -188,8 +188,11 @@ var (
 	PermissionMCPCall = Permission{Name: "调用MCP工具", Code: "mcp.call", Type: "api", GroupName: "mcp", Method: "POST", APIPath: "/api/dashboard/mcp/call_tool", SortNo: 1720}
 )
 
+var PermissionSystemConfigUpdate = Permission{Name: "更新系统配置", Code: "systemConfig.update", Type: "api", GroupName: "systemConfig", Method: "POST", APIPath: "/api/dashboard/system-config/language", SortNo: 1730}
+
 // Permissions 内置权限列表
 var Permissions = []Permission{
+	PermissionSystemConfigUpdate,
 	PermissionUserView,
 	PermissionUserCreate,
 	PermissionUserUpdate,
@@ -425,6 +428,7 @@ var Roles = []RoleSpec{
 var RolePermissions = map[string][]Permission{
 	RoleCodeSuperAdmin: Permissions,
 	RoleCodeAdmin: {
+		PermissionSystemConfigUpdate,
 		PermissionUserView, PermissionUserCreate, PermissionUserUpdate, PermissionUserAssignRole,
 		PermissionRoleView, PermissionRoleCreate, PermissionRoleUpdate, PermissionRoleAssignPermission,
 		PermissionPermissionView, PermissionPermissionSync,

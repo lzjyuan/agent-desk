@@ -36,15 +36,15 @@ function createElement(tagName) {
   }
 }
 
-async function loadSdk(config) {
-  const source = await readFile(new URL("./agent-desk-sdk.ts", import.meta.url), "utf8")
+async function loadSdk(config, clientLanguage = "zh-CN") {
+  const source = await readFile(new URL("./agents-service-sdk.ts", import.meta.url), "utf8")
   const compiled = ts.transpileModule(source, {
     compilerOptions: {
       target: ts.ScriptTarget.ES2017,
       module: ts.ModuleKind.ESNext,
       importsNotUsedAsValues: ts.ImportsNotUsedAsValues.Remove,
     },
-    fileName: "agent-desk-sdk.ts",
+    fileName: "agents-service-sdk.ts",
   })
   const body = createElement("body")
   const sandbox = {
@@ -57,6 +57,7 @@ async function loadSdk(config) {
               success: true,
               data: {
                 language: "en-US",
+                clientLanguage,
               },
             }
           : {
@@ -69,7 +70,7 @@ async function loadSdk(config) {
     document: {
       body,
       currentScript: {
-        src: "https://chat.example/sdk/agent-desk-sdk.min.js",
+        src: "https://chat.example/sdk/agents-service-sdk.min.js",
       },
       createElement,
       createElementNS: (_namespace, tagName) => createElement(tagName),
@@ -122,6 +123,7 @@ test("getChatUrl resolves a fresh userToken for each call", async () => {
   const second = await sandbox.window.AgentDeskWidget.getChatUrl()
 
   assert.equal(new URL(first).pathname, "/support/chat/")
+  assert.equal(new URL(first).origin, "https://chat.example")
   assert.equal(new URL(second).pathname, "/support/chat/")
   assert.equal(new URL(first).searchParams.get("userToken"), "token_1")
   assert.equal(new URL(second).searchParams.get("userToken"), "token_2")
@@ -140,7 +142,7 @@ test("launcher click creates chat iframe with a freshly resolved userToken", asy
   )
 
   assert.ok(launcher)
-  assert.equal(launcher.children.at(-1)?.textContent, "Support")
+  assert.equal(launcher.children.at(-1)?.textContent, "客服")
 
   launcher.click()
   await flushPromises()
@@ -152,6 +154,17 @@ test("launcher click creates chat iframe with a freshly resolved userToken", asy
   assert.ok(frame)
   assert.equal(new URL(frame.src).pathname, "/support/chat/")
   assert.equal(new URL(frame.src).searchParams.get("userToken"), "click_token")
+})
+
+test("Indonesian client setting localizes launcher and iframe title", async () => {
+  const sandbox = await loadSdk({ channelId: "ch_1", baseUrl: "https://api.example" }, "id-ID")
+  await flushPromises()
+  const launcher = sandbox.document.body.children.find((child) => child.dataset.agentDeskWidget === "launcher")
+  assert.equal(launcher.children.at(-1)?.textContent, "Bantuan")
+  launcher.click()
+  await flushPromises()
+  const frame = sandbox.document.body.children.find((child) => child.dataset.agentDeskWidget === "frame")
+  assert.equal(frame.title, "Bantuan pelanggan")
 })
 
 test("chat iframe layout uses dynamic viewport height for iOS browser chrome", async () => {

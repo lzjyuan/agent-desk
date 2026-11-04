@@ -10,6 +10,7 @@ import (
 const (
 	LocaleZhCN = "zh-CN"
 	LocaleEnUS = "en-US"
+	LocaleIdID = "id-ID"
 )
 
 var supportedLocales = map[string]string{
@@ -20,6 +21,9 @@ var supportedLocales = map[string]string{
 	"en":      LocaleEnUS,
 	"en-us":   LocaleEnUS,
 	"en_us":   LocaleEnUS,
+	"id":      LocaleIdID,
+	"id-id":   LocaleIdID,
+	"id_id":   LocaleIdID,
 }
 
 var DefaultLocale = LocaleZhCN

@@ -1,4 +1,5 @@
 import { parseMessageAssetPayload } from "@/lib/im-message"
+import { preserveRecalledMessage } from "@/lib/im-message-recall"
 
 export type MergeableImMessage = {
   id: number
@@ -87,6 +88,7 @@ export function mergeImMessage<T extends MergeableImMessage>(
   existing: T,
   incoming: T
 ): T {
+  incoming = preserveRecalledMessage(existing, incoming)
   const normalizedIncoming = normalizeDynamicImageContent(
     existing,
     normalizeDynamicImagePayload(existing, incoming)

@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import type { PanelImperativeHandle } from "react-resizable-panels";
 
 import { ConversationCloseDialog } from "@/components/conversation-actions/close-dialog";
+import { useAuth } from "@/components/auth-provider";
 import { ConversationTransferDialog } from "@/components/conversation-actions/transfer-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -46,6 +47,7 @@ import { CreateTicketFromConversationDialog } from "../../tickets/_components/cr
 import { ChatPanel } from "./chat-panel";
 import { ConversationInfoPanel } from "./conversation-info-panel";
 import { ConversationList } from "./conversation-list";
+import { TranslationProvider } from "./translation-assistant";
 
 const workbenchIconButtonClassName =
   "size-8 text-muted-foreground hover:bg-muted hover:text-foreground";
@@ -61,6 +63,16 @@ function getCustomerOnlineDotClassName(online?: boolean) {
 }
 
 export function ConversationWorkbench() {
+  const { session } = useAuth();
+  const accountId = session?.user?.id ?? 0;
+  return (
+    <TranslationProvider key={accountId} accountId={accountId}>
+      <ConversationWorkbenchContent />
+    </TranslationProvider>
+  );
+}
+
+function ConversationWorkbenchContent() {
   const t = useI18n();
   const conversation = useAgentConversationsStore(
     agentConversationSelectors.selectedConversation,

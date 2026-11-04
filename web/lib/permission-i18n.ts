@@ -76,6 +76,7 @@ const PERMISSION_RESOURCE_LABELS: Record<string, { singular: string; plural: str
   docPage: { singular: "documentation page", plural: "documentation pages" },
   supportCommunity: { singular: "support community", plural: "support communities" },
   supportConfig: { singular: "support configuration", plural: "support configurations" },
+  systemConfig: { singular: "system configuration", plural: "system configurations" },
   skillDefinition: { singular: "Skill definition", plural: "Skill definitions" },
   mcp: { singular: "MCP tool", plural: "MCP tools" },
 }
@@ -106,6 +107,7 @@ const PERMISSION_RESOURCE_LABELS_ZH: Record<string, string> = {
   docPage: "文档中心页面",
   supportCommunity: "支持中心社区",
   supportConfig: "支持中心配置",
+  systemConfig: "系统配置",
   skillDefinition: "技能定义",
   mcp: "MCP工具",
 }

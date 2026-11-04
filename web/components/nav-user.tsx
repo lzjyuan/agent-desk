@@ -9,6 +9,7 @@ import { ChangePasswordDialog } from "@/components/change-password-dialog"
 import { useNotifications } from "@/components/notification-provider"
 import { PaletteToggle } from "@/components/palette-toggle"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { SiteLanguageSettings } from "@/components/site-language-settings"
 import { Badge } from "@/components/ui/badge"
 import {
   Avatar,
@@ -105,6 +106,7 @@ export function NavUser({
                 <div className="flex items-center gap-2 px-2 pb-2">
                   <PaletteToggle />
                   <ThemeToggle />
+                  <SiteLanguageSettings />
                 </div>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />

@@ -8,6 +8,7 @@ import (
 	"agent-desk/internal/pkg/errorsx"
 	"agent-desk/internal/pkg/utils"
 	"agent-desk/internal/repositories"
+	"context"
 	"strings"
 	"time"
 
@@ -60,6 +61,13 @@ func (s *agentProfileService) GetByUserID(userID int64) *models.AgentProfile {
 	return repositories.AgentProfileRepository.FindOne(sqls.DB(), sqls.NewCnd().Eq("user_id", userID))
 }
 
+func (s *agentProfileService) RecordOnlineActivity(ctx context.Context, userID int64) error {
+	if userID <= 0 {
+		return nil
+	}
+	return repositories.AgentProfileRepository.TouchOnlineAt(sqls.DB().WithContext(ctx), userID, time.Now(), 30*time.Second)
+}
+
 func (s *agentProfileService) GetUserIDsByTeamID(teamID int64) []int64 {
 	if teamID <= 0 {
 		return nil
@@ -95,6 +103,8 @@ func (s *agentProfileService) CreateAgentProfile(req request.CreateAgentProfileR
 		return nil, err
 	}
 	item.AuditFields = utils.BuildAuditFields(operator)
+	now := time.Now()
+	item.LastStatusAt = &now
 	if err := repositories.AgentProfileRepository.Create(sqls.DB(), item); err != nil {
 		return nil, err
 	}
@@ -114,7 +124,8 @@ func (s *agentProfileService) UpdateAgentProfile(req request.UpdateAgentProfileR
 	if err != nil {
 		return err
 	}
-	if err := repositories.AgentProfileRepository.Updates(sqls.DB(), req.ID, map[string]any{
+	now := time.Now()
+	columns := map[string]any{
 		"user_id":                 item.UserID,
 		"team_id":                 item.TeamID,
 		"agent_code":              item.AgentCode,
@@ -128,8 +139,12 @@ func (s *agentProfileService) UpdateAgentProfile(req request.UpdateAgentProfileR
 		"remark":                  item.Remark,
 		"update_user_id":          operator.UserID,
 		"update_user_name":        operator.Username,
-		"updated_at":              time.Now(),
-	}); err != nil {
+		"updated_at":              now,
+	}
+	if current.ServiceStatus != item.ServiceStatus {
+		columns["last_status_at"] = now
+	}
+	if err := repositories.AgentProfileRepository.Updates(sqls.DB(), req.ID, columns); err != nil {
 		return err
 	}
 	s.dispatchPendingConversationsIfEligible(item)

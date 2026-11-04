@@ -42,6 +42,7 @@ function getModelTypeOptions(t: TFunction) {
     { value: String(AIModelType.LLM), label: t("aiConfig.modelTypeLlm") },
     { value: String(AIModelType.Embedding), label: t("aiConfig.modelTypeEmbedding") },
     { value: String(AIModelType.Rerank), label: t("aiConfig.modelTypeRerank") },
+    { value: String(AIModelType.Translation), label: t("aiConfig.modelTypeTranslation") },
   ]
 }
 

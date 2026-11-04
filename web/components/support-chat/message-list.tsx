@@ -192,7 +192,10 @@ const MessageItem = memo(
     const senderName = isCustomer ? t("supportChat.customerSelf") : message.senderName?.trim() || t("supportChat.agentLabel")
     const avatarSrc =
       !isCustomer && message.senderAvatar?.trim() ? message.senderAvatar.trim() : undefined
-    const htmlContent = renderIMMessageHTML(message)
+    const isRecalled = Boolean(message.recalledAt) || message.sendStatus === 6
+    const htmlContent = isRecalled
+      ? `<p>${t("supportChat.messageRecalled")}</p>`
+      : renderIMMessageHTML(message)
     const fallbackName = senderName.slice(0, 1).toUpperCase()
 
     return (
@@ -226,9 +229,6 @@ const MessageItem = memo(
             <>
               <span className="font-medium">{senderName}</span>
               <span>{formatDateTime(message.sentAt)}</span>
-              {isCustomer ? (
-                <span>{message.agentRead ? t("supportChat.agentRead") : t("supportChat.agentUnread")}</span>
-              ) : null}
             </>
           }
         >
@@ -272,7 +272,8 @@ function isSameMessageItemRender(prev: ImMessage, next: ImMessage) {
     prev.messageType === next.messageType &&
     prev.content === next.content &&
     prev.payload === next.payload &&
-    prev.sentAt === next.sentAt &&
-    prev.agentRead === next.agentRead
+    prev.sendStatus === next.sendStatus &&
+    prev.recalledAt === next.recalledAt &&
+    prev.sentAt === next.sentAt
   )
 }

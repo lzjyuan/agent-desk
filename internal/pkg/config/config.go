@@ -13,7 +13,6 @@ import (
 )
 
 type Config struct {
-	Language        string                `yaml:"language"`
 	Server          ServerConfig          `yaml:"server"`
 	DB              DBConfig              `yaml:"db"`
 	Logger          LoggerConfig          `yaml:"logger"`
@@ -28,17 +27,6 @@ type Config struct {
 	Discord         DiscordConfig         `yaml:"discord"`
 	Email           EmailConfig           `yaml:"email"`
 	Slack           SlackConfig           `yaml:"slack"`
-}
-
-func (c Config) LanguageOrDefault() string {
-	switch strings.ToLower(strings.TrimSpace(c.Language)) {
-	case "zh", "zh-cn", "zh_cn", "zh-hans":
-		return "zh-CN"
-	case "en", "en-us", "en_us":
-		return "en-US"
-	default:
-		return "zh-CN"
-	}
 }
 
 type WxWorkNotifyConfig struct {
@@ -448,7 +436,6 @@ func loadDotEnv(configPath string) {
 }
 
 func bindConfigDefaults(v *viper.Viper) {
-	v.SetDefault("language", "zh-CN")
 	v.SetDefault("server.port", 8083)
 	v.SetDefault("server.companyName", "")
 	v.SetDefault("server.companyLogoUrl", "")

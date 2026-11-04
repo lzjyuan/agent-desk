@@ -43,19 +43,23 @@ type PublicConfigResponse = {
   success?: boolean
   data?: {
     language?: string
+    clientLanguage?: string
   }
 }
 
 function normalizeWidgetLanguage(language: string | undefined) {
-  return String(language || "").toLowerCase().startsWith("en") ? "en-US" : "zh-CN"
+  const value = String(language || "").toLowerCase()
+  return value.startsWith("id") ? "id-ID" : value.startsWith("en") ? "en-US" : "zh-CN"
 }
 
 function getDefaultWidgetTitle(config?: NormalizedAgentDeskConfig | null) {
-  return normalizeWidgetLanguage(config?.language) === "en-US" ? "Support" : "\u5728\u7ebf\u5ba2\u670d"
+  const language = normalizeWidgetLanguage(config?.language)
+  return language === "id-ID" ? "Bantuan pelanggan" : language === "en-US" ? "Support" : "\u5728\u7ebf\u5ba2\u670d"
 }
 
 function getLauncherText(config?: NormalizedAgentDeskConfig | null) {
-  return normalizeWidgetLanguage(config?.language) === "en-US" ? "Support" : "\u5ba2\u670d"
+  const language = normalizeWidgetLanguage(config?.language)
+  return language === "id-ID" ? "Bantuan" : language === "en-US" ? "Support" : "\u5ba2\u670d"
 }
 
 type FrameMessage =
@@ -119,7 +123,7 @@ type FrameMessage =
   function resolveWidgetBaseUrl(config: NormalizedAgentDeskConfig) {
     const currentScript = document.currentScript as HTMLScriptElement | null
     if (currentScript?.src) {
-      return currentScript.src.replace(/\/sdk\/agent-desk-sdk\.min\.js(?:\?.*)?$/, "")
+      return currentScript.src.replace(/\/sdk\/agents-service-sdk\.min\.js(?:\?.*)?$/, "")
     }
     return String(config.widgetBaseUrl || config.baseUrl || window.location.origin).replace(/\/$/, "")
   }
@@ -229,7 +233,7 @@ type FrameMessage =
         }
         return normalizeConfig({
           ...config,
-          language: payload.data?.language || config.language,
+          language: payload.data?.clientLanguage || config.language,
         })
       })
       .catch(() => config)

@@ -32,6 +32,8 @@ test("normalizes supported locale aliases", async () => {
   assert.equal(normalizeLocale("en-US"), "en-US")
   assert.equal(normalizeLocale("en_US"), "en-US")
   assert.equal(normalizeLocale("en"), "en-US")
+  assert.equal(normalizeLocale("id-ID"), "id-ID")
+  assert.equal(normalizeLocale("id"), "id-ID")
   assert.equal(normalizeLocale("fr-FR"), DEFAULT_LOCALE)
 })
 

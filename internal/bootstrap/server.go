@@ -30,7 +30,7 @@ import (
 
 func NewServer() (*gin.Engine, error) {
 	cfg := config.Current()
-	i18nx.SetDefaultLocale(cfg.LanguageOrDefault())
+	i18nx.SetDefaultLocale(i18nx.LocaleZhCN)
 
 	gin.SetMode(gin.ReleaseMode)
 	printBanner()
@@ -54,6 +54,26 @@ func NewServer() (*gin.Engine, error) {
 	app.Use(requestLogMiddleware())
 	app.Use(maxBodySizeMiddleware())
 	app.Use(i18nx.Middleware())
+	app.Use(func(ctx *gin.Context) {
+		requestPath := ctx.Request.URL.Path
+		if strings.HasPrefix(requestPath, "/api/") {
+			clientRequest := false
+			for _, prefix := range []string{"/api/customer/", "/api/conversation/", "/api/message/", "/api/channel/", "/api/support/"} {
+				if strings.HasPrefix(requestPath, prefix) {
+					clientRequest = true
+					break
+				}
+			}
+			var language string
+			if clientRequest {
+				language = services.SystemConfigService.GetClientLanguage()
+			} else {
+				language = services.SystemConfigService.GetSiteLanguage()
+			}
+			i18nx.SetLocale(ctx, language)
+		}
+		ctx.Next()
+	})
 
 	addRouter(app)
 
@@ -194,6 +214,7 @@ func addRouter(app *gin.Engine) {
 	wsGroup.GET("/open", services.WsService.HandleOpenWS)
 
 	dashboardGroup := app.Group("/api/dashboard", middleware.AuthMiddleware)
+	registerDashboardSystemConfigRoutes(dashboardGroup.Group("/system-config"))
 	registerDashboardDashboardRoutes(dashboardGroup.Group("/dashboard"))
 	registerDashboardUserRoutes(dashboardGroup.Group("/user"))
 	registerDashboardOrganizationRoutes(dashboardGroup.Group("/organization"))

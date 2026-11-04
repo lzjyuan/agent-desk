@@ -24,6 +24,7 @@ type LoginResponse struct {
 
 type PublicConfigResponse struct {
 	Language             string `json:"language"`
+	ClientLanguage       string `json:"clientLanguage"`
 	CompanyName          string `json:"companyName,omitempty"`
 	CompanyLogoURL       string `json:"companyLogoUrl,omitempty"`
 	PasswordLoginEnabled bool   `json:"passwordLoginEnabled"`

@@ -42,7 +42,7 @@ export default function SupportRootLayout({
         <Script id="support-theme-initializer" strategy="beforeInteractive">
           {themeInitializerScript}
         </Script>
-        <AppI18nProvider>
+        <AppI18nProvider client>
           <ThemeProvider>
             <SupportAuthProvider>
               <ConfirmProvider>

@@ -51,6 +51,7 @@ function getModelTypeOptions(t: TFunction, includeAll = true) {
       label: t("aiConfig.modelTypeEmbedding"),
     },
     { value: String(AIModelType.Rerank), label: t("aiConfig.modelTypeRerank") },
+    { value: String(AIModelType.Translation), label: t("aiConfig.modelTypeTranslation") },
   ];
   return includeAll
     ? [{ value: "all", label: t("aiConfig.allTypes") }, ...options]

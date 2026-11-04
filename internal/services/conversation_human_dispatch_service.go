@@ -111,6 +111,9 @@ func (s *conversationHumanDispatchService) ApplyHumanOnlyCreate(conversationID i
 		if err := s.sendAIText(conversationID, aiAgent.ID, HandoffWaitingMessage); err != nil {
 			return nil, err
 		}
+		if conversation := ConversationService.Get(conversationID); conversation != nil {
+			WsService.PublishConversationChanged(conversation, enums.IMRealtimeEventConversationPending)
+		}
 		return &HandoffDecisionResult{Decision: HandoffDecisionGlobalPool, Message: HandoffWaitingMessage}, nil
 	}
 	return s.dispatchAfterHandoff(conversationID, aiAgent.ID, activeTeamIDs, "仅人工模式新会话", false)
@@ -152,7 +155,7 @@ func (s *conversationHumanDispatchService) DispatchPendingConversation(conversat
 		return nil, err
 	}
 	if teamPoolConversation != nil {
-		WsService.PublishConversationChanged(teamPoolConversation, enums.IMRealtimeEventConversationUpdated)
+		WsService.PublishConversationChanged(teamPoolConversation, enums.IMRealtimeEventConversationPending)
 	}
 	return &HandoffDecisionResult{Decision: HandoffDecisionTeamPool, TeamID: teamID}, nil
 }
@@ -201,7 +204,7 @@ func (s *conversationHumanDispatchService) dispatchAfterHandoffWithRequestID(con
 		return nil, err
 	}
 	if teamPoolConversation != nil {
-		WsService.PublishConversationChanged(teamPoolConversation, enums.IMRealtimeEventConversationUpdated)
+		WsService.PublishConversationChanged(teamPoolConversation, enums.IMRealtimeEventConversationPending)
 	}
 	return &HandoffDecisionResult{Decision: HandoffDecisionTeamPool, TeamID: teamID, Message: HandoffWaitingMessage}, nil
 }
