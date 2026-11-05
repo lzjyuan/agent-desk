@@ -45,6 +45,7 @@ func TestSupportAICustomerServiceConfigValidatesWebChannel(t *testing.T) {
 	agent := createChannelServiceTestAgent(t, db, 1001)
 	channel, err := ChannelService.CreateChannel(request.CreateChannelRequest{
 		ChannelType: enums.ChannelTypeWeb,
+		ConfigJSON:  `{"publicBaseUrl":"https://chat.example.com/"}`,
 		AIAgentID:   agent.ID,
 		Name:        "支持中心 AI 客服",
 		Status:      int(enums.StatusOk),
@@ -76,6 +77,7 @@ func TestPublicSupportAICustomerServiceHidesDisabledChannel(t *testing.T) {
 	agent := createChannelServiceTestAgent(t, db, 1001)
 	channel, err := ChannelService.CreateChannel(request.CreateChannelRequest{
 		ChannelType: enums.ChannelTypeWeb,
+		ConfigJSON:  `{"publicBaseUrl":"https://chat.example.com/"}`,
 		AIAgentID:   agent.ID,
 		Name:        "支持中心 AI 客服",
 		Status:      int(enums.StatusOk),
@@ -116,6 +118,7 @@ func TestSignSupportUserTokenUsesInternalUserSource(t *testing.T) {
 	agent := createChannelServiceTestAgent(t, db, 1001)
 	channel, err := ChannelService.CreateChannel(request.CreateChannelRequest{
 		ChannelType: enums.ChannelTypeWeb,
+		ConfigJSON:  `{"publicBaseUrl":"https://chat.example.com/"}`,
 		AIAgentID:   agent.ID,
 		Name:        "支持中心 AI 客服",
 		Status:      int(enums.StatusOk),

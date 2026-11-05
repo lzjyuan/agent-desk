@@ -19,8 +19,8 @@
   },
   "app": {
     "brand": "客服AGENT",
-    "metadataTitle": "AI 客服后台管理系统",
-    "metadataDescription": "AI 客服后台管理系统"
+    "metadataTitle": "客服服务",
+    "metadataDescription": "客服服务"
   },
   "common": {
     "language": "语言",
@@ -772,6 +772,9 @@
     "searchMountPosition": "搜索挂载位置",
     "emptyMountPosition": "未找到挂载位置",
     "widgetWidth": "窗口宽度",
+    "publicBaseUrl": "客户站点地址",
+    "publicBaseUrlDescription": "客户聊天链接和嵌入代码使用此域名；测试页仍在后台打开。",
+    "publicBaseUrlInvalid": "请输入网站根地址，例如 https://chat.honertop.com/",
     "userJwtSecret": "用户 JWT Secret",
     "userJwtSecretDescription": "业务系统使用该 secret 签发 userToken。重置后请同步更新业务系统配置。",
     "secretAfterSave": "保存渠道后可生成用户 JWT Secret。",
@@ -1035,6 +1038,9 @@
     "serviceAiFirst": "AI 优先",
     "serviceUndefined": "未定义",
     "allTags": "全部标签",
+    "allChannels": "全部渠道",
+    "searchChannel": "搜索渠道名称",
+    "emptyChannels": "没有匹配渠道",
     "allAssignees": "全部指派人",
     "allTeams": "全部客服组",
     "loadListFailed": "加载会话列表失败",
@@ -1067,6 +1073,7 @@
     "columnActions": "操作",
     "customerFallback": "客户 #{id}",
     "channelIdValue": "渠道ID：{id}",
+    "channel": "渠道",
     "noLatestSummary": "暂无最新消息摘要",
     "unreadSummary": "客服 {agent} / 用户 {customer}",
     "view": "查看",
@@ -2491,6 +2498,7 @@
     "missingSecret": "请填写 JWT Secret",
     "invalidTtl": "有效期必须大于 0",
     "missingChannel": "请填写 channelId",
+    "publicBaseUrlRequired": "请先为渠道配置客户站点地址",
     "mountedJwt": "Widget 已挂载：JWT 用户模式",
     "mountedGuest": "Widget 已挂载：访客模式",
     "mounted": "Widget 已挂载",

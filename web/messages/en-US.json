@@ -18,9 +18,9 @@
     "continueEditing": "Keep editing"
   },
   "app": {
-    "brand": "Agent Desk",
-    "metadataTitle": "AI Customer Support Admin",
-    "metadataDescription": "AI Customer Support Admin"
+    "brand": "Agent Service",
+    "metadataTitle": "Customer Service",
+    "metadataDescription": "Customer Service"
   },
   "common": {
     "language": "Language",
@@ -772,6 +772,9 @@
     "searchMountPosition": "Search positions",
     "emptyMountPosition": "No positions found",
     "widgetWidth": "Widget Width",
+    "publicBaseUrl": "Customer site URL",
+    "publicBaseUrlDescription": "Customer chat links and embed code use this domain; the test page stays on the admin site.",
+    "publicBaseUrlInvalid": "Enter a site root URL, such as https://chat.honertop.com/",
     "userJwtSecret": "User JWT Secret",
     "userJwtSecretDescription": "Your business system uses this secret to sign userTokens. After resetting it, update your business system configuration as well.",
     "secretAfterSave": "Save the channel to generate a User JWT Secret.",
@@ -1035,6 +1038,9 @@
     "serviceAiFirst": "AI first",
     "serviceUndefined": "Undefined",
     "allTags": "All tags",
+    "allChannels": "All channels",
+    "searchChannel": "Search channels",
+    "emptyChannels": "No matching channels",
     "allAssignees": "All assignees",
     "allTeams": "All teams",
     "loadListFailed": "Could not load conversations.",
@@ -1067,6 +1073,7 @@
     "columnActions": "Actions",
     "customerFallback": "Customer #{id}",
     "channelIdValue": "Channel ID: {id}",
+    "channel": "Channel",
     "noLatestSummary": "No recent message summary",
     "unreadSummary": "Agent {agent} / Customer {customer}",
     "view": "View",
@@ -2492,6 +2499,7 @@
     "missingSecret": "Enter the JWT secret.",
     "invalidTtl": "TTL must be greater than 0.",
     "missingChannel": "Enter channelId.",
+    "publicBaseUrlRequired": "Set the customer site URL for this channel first.",
     "mountedJwt": "Widget mounted in JWT user mode.",
     "mountedGuest": "Widget mounted in guest mode.",
     "mounted": "Widget mounted.",

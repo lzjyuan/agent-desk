@@ -23,23 +23,25 @@ func ChannelAnyConfig(ctx *gin.Context) {
 	}
 
 	ret := response.WidgetConfigResponse{
-		ChannelID:   channel.ChannelID,
-		ChannelType: channel.ChannelType,
-		Title:       cfg.Title,
-		Subtitle:    cfg.Subtitle,
-		ThemeColor:  cfg.ThemeColor,
-		Position:    cfg.Position,
-		Width:       cfg.Width,
+		ChannelID:     channel.ChannelID,
+		ChannelType:   channel.ChannelType,
+		Title:         cfg.Title,
+		Subtitle:      cfg.Subtitle,
+		ThemeColor:    cfg.ThemeColor,
+		Position:      cfg.Position,
+		Width:         cfg.Width,
+		PublicBaseURL: cfg.PublicBaseURL,
 	}
 	httpx.WriteJSON(ctx, ret)
 }
 
 type webLikeWidgetConfig struct {
-	Title      string
-	Subtitle   string
-	ThemeColor string
-	Position   string
-	Width      string
+	Title         string
+	Subtitle      string
+	ThemeColor    string
+	Position      string
+	Width         string
+	PublicBaseURL string
 }
 
 func resolveWidgetConfig(channelType, rawConfig string) (*webLikeWidgetConfig, error) {
@@ -50,11 +52,12 @@ func resolveWidgetConfig(channelType, rawConfig string) (*webLikeWidgetConfig, e
 			return nil, err
 		}
 		return &webLikeWidgetConfig{
-			Title:      cfg.Title,
-			Subtitle:   cfg.Subtitle,
-			ThemeColor: cfg.ThemeColor,
-			Position:   cfg.Position,
-			Width:      cfg.Width,
+			Title:         cfg.Title,
+			Subtitle:      cfg.Subtitle,
+			ThemeColor:    cfg.ThemeColor,
+			Position:      cfg.Position,
+			Width:         cfg.Width,
+			PublicBaseURL: cfg.PublicBaseURL,
 		}, nil
 	case enums.ChannelTypeWechatMP:
 		cfg, err := services.ChannelService.ParseWechatMPChannelConfig(rawConfig)

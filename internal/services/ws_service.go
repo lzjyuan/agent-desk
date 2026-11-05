@@ -163,7 +163,7 @@ func (s *wsService) upgradeConnection(ctx *gin.Context, principal *dto.AuthPrinc
 		session.enqueueEvent(s.newEvent("", RealtimeCustomerSessionRefreshEvent{
 			Payload: RealtimeCustomerSessionRefreshPayload{
 				CustomerSessionToken: customerSessionInfo[0].Token,
-				ExpiresAt:            customerSessionInfo[0].ExpiresAt.Format(time.DateTime),
+				ExpiresAt:            formatCustomerSessionExpiry(customerSessionInfo[0].ExpiresAt),
 			},
 		}))
 	}

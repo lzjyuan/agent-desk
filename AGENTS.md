@@ -20,7 +20,7 @@ The repository contains three application areas:
 
 The main stack is:
 
-- Go 1.26, Gin, GORM, `github.com/mlogclub/simple`
+- Go 1.27.3, Gin, GORM, `github.com/mlogclub/simple`
 - SQLite and MySQL
 - Next.js 16 App Router, React 19, TypeScript, Tailwind CSS, shadcn/Base UI
 - `pnpm` for both frontend projects

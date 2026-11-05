@@ -96,6 +96,9 @@ func TestConversationHumanDispatchAIHandoffAssignsAvailableAgent(t *testing.T) {
 	if current.HandoffAt == nil || current.HandoffReason != "用户要求转人工" {
 		t.Fatalf("expected handoff metadata, got at=%v reason=%q", current.HandoffAt, current.HandoffReason)
 	}
+	if notice := services.MessageService.FindOne(sqls.NewCnd().Eq("conversation_id", conversation.ID)); notice != nil {
+		t.Fatalf("handoff should not send a waiting message, got %+v", notice)
+	}
 }
 
 func TestConversationHumanDispatchAIHandoffFallsBackToFirstScheduledTeam(t *testing.T) {
@@ -123,6 +126,9 @@ func TestConversationHumanDispatchAIHandoffFallsBackToFirstScheduledTeam(t *test
 	if current.CurrentTeamID != 1 || current.CurrentAssigneeID != 0 {
 		t.Fatalf("expected fallback team 1 with no assignee, got team=%d assignee=%d", current.CurrentTeamID, current.CurrentAssigneeID)
 	}
+	if notice := services.MessageService.FindOne(sqls.NewCnd().Eq("conversation_id", conversation.ID)); notice != nil {
+		t.Fatalf("team-pool handoff should not send a waiting message, got %+v", notice)
+	}
 }
 
 func TestConversationHumanDispatchHumanOnlyCreateOffHoursUsesGlobalPendingPool(t *testing.T) {
@@ -145,8 +151,8 @@ func TestConversationHumanDispatchHumanOnlyCreateOffHoursUsesGlobalPendingPool(t
 	}
 
 	message := services.MessageService.FindOne(sqls.NewCnd().Eq("conversation_id", conversation.ID).Desc("id"))
-	if message == nil || message.Content != services.HandoffWaitingMessage {
-		t.Fatalf("expected waiting message, got %+v", message)
+	if message != nil {
+		t.Fatalf("human-only creation should not send a waiting message, got %+v", message)
 	}
 }
 

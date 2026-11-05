@@ -48,6 +48,7 @@ import {
   fetchAgentProfilesAll,
   fetchAgentTeamsAll,
   fetchConversationDetail,
+  fetchConversationChannelOptions,
   fetchConversationMessages,
   fetchConversations,
   fetchTagsAll,
@@ -56,6 +57,7 @@ import {
   type AdminAgentTeam,
   type AdminConversation,
   type AdminConversationDetail,
+  type ConversationChannelOption,
   type AdminMessage,
   type PageResult,
   type TagTree,
@@ -118,17 +120,22 @@ export default function DashboardConversationsPage() {
   const statusOptions = useMemo(() => getStatusOptions(t), [t])
   const [keywordInput, setKeywordInput] = useState("")
   const [statusFilterInput, setStatusFilterInput] = useState("all")
+  const [channelFilterInput, setChannelFilterInput] = useState("0")
   const [tagFilterInput, setTagFilterInput] = useState("0")
   const [assigneeFilterInput, setAssigneeFilterInput] = useState("0")
   const [agentTeamFilterInput, setAgentTeamFilterInput] = useState("0")
   const [keyword, setKeyword] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
+  const [channelFilter, setChannelFilter] = useState("0")
   const [tagFilter, setTagFilter] = useState("0")
   const [assigneeFilter, setAssigneeFilter] = useState("0")
   const [agentTeamFilter, setAgentTeamFilter] = useState("0")
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(20)
   const [tags, setTags] = useState<TagTree[]>([])
+  const [channelOptions, setChannelOptions] = useState<ComboboxOption[]>([
+    { value: "0", label: t("conversationMonitor.allChannels") },
+  ])
   const [assigneeOptions, setAssigneeOptions] = useState<ComboboxOption[]>([
     { value: "0", label: t("conversationMonitor.allAssignees") },
   ])
@@ -169,6 +176,7 @@ export default function DashboardConversationsPage() {
       const data = await fetchConversations({
         keyword: keyword.trim() || undefined,
         status: statusFilter === "all" ? undefined : statusFilter,
+        channelId: channelFilter === "0" ? undefined : channelFilter,
         tagId: tagFilter === "0" ? undefined : tagFilter,
         currentAssigneeId: assigneeFilter === "0" ? undefined : assigneeFilter,
         agentTeamId: agentTeamFilter === "0" ? undefined : agentTeamFilter,
@@ -181,20 +189,28 @@ export default function DashboardConversationsPage() {
     } finally {
       setLoading(false)
     }
-  }, [keyword, limit, page, statusFilter, tagFilter, assigneeFilter, agentTeamFilter, t])
+  }, [keyword, limit, page, statusFilter, channelFilter, tagFilter, assigneeFilter, agentTeamFilter, t])
 
   useEffect(() => {
     let cancelled = false
 
     async function loadFilterOptions() {
       try {
-        const [tagData, assigneeData, teamData] = await Promise.all([
+        const [tagData, assigneeData, teamData, channelData] = await Promise.all([
           fetchTagsAll(),
           fetchAgentProfilesAll(),
           fetchAgentTeamsAll(),
+          fetchConversationChannelOptions(),
         ])
         if (!cancelled) {
           setTags(Array.isArray(tagData) ? tagData : [])
+          setChannelOptions([
+            { value: "0", label: t("conversationMonitor.allChannels") },
+            ...channelData.map((item: ConversationChannelOption) => ({
+              value: String(item.id),
+              label: item.name ? `${item.name} (#${item.id})` : `#${item.id}`,
+            })),
+          ])
           setAssigneeOptions([
             { value: "0", label: t("conversationMonitor.allAssignees") },
             ...assigneeData.map((item: AdminAgentProfile) => ({
@@ -402,6 +418,7 @@ export default function DashboardConversationsPage() {
   function applyFilters() {
     setKeyword(keywordInput)
     setStatusFilter(statusFilterInput)
+    setChannelFilter(channelFilterInput)
     setTagFilter(tagFilterInput)
     setAssigneeFilter(assigneeFilterInput)
     setAgentTeamFilter(agentTeamFilterInput)
@@ -652,6 +669,16 @@ export default function DashboardConversationsPage() {
               onChange={handleStatusFilterChange}
             />
           </div>
+          <div className="w-full sm:w-48">
+            <OptionCombobox
+              value={channelFilterInput}
+              options={channelOptions}
+              placeholder={t("conversationMonitor.allChannels")}
+              searchPlaceholder={t("conversationMonitor.searchChannel")}
+              emptyText={t("conversationMonitor.emptyChannels")}
+              onChange={setChannelFilterInput}
+            />
+          </div>
           <div className="w-full sm:w-64">
             <TagSelector
               mode="single"
@@ -731,9 +758,10 @@ export default function DashboardConversationsPage() {
                               })}
                           </div>
                           <div className="mt-1 text-sm text-muted-foreground">
-                            {t("conversationMonitor.channelIdValue", {
-                              id: item.channelId || "-",
-                            })}
+                            {item.channelName?.trim() ||
+                              t("conversationMonitor.channelIdValue", {
+                                id: item.channelId || "-",
+                              })}
                           </div>
                           <div className="mt-1 line-clamp-2 text-sm text-muted-foreground">
                             {item.lastMessageSummary || t("conversationMonitor.noLatestSummary")}

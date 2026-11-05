@@ -23,6 +23,7 @@ type WebChannelConfig struct {
 	ThemeColor      string `json:"themeColor"`
 	Position        string `json:"position"`
 	Width           string `json:"width"`
+	PublicBaseURL   string `json:"publicBaseUrl"`
 	UserTokenSecret string `json:"userTokenSecret,omitempty"`
 }
 

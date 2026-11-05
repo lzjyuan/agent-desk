@@ -14,6 +14,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"net/url"
 	"strings"
 	"time"
 
@@ -270,6 +271,11 @@ func (s *channelService) ParseWebChannelConfig(raw string) (*dto.WebChannelConfi
 	cfg.Width = strings.TrimSpace(cfg.Width)
 	if cfg.Width == "" {
 		cfg.Width = "380px"
+	}
+	cfg.PublicBaseURL = strings.TrimSpace(cfg.PublicBaseURL)
+	parsed, err := url.Parse(cfg.PublicBaseURL)
+	if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Host == "" || parsed.User != nil || (parsed.Path != "" && parsed.Path != "/") || parsed.RawQuery != "" || parsed.Fragment != "" {
+		return nil, errorsx.InvalidParam("invalid web channel publicBaseUrl")
 	}
 	cfg.UserTokenSecret = strings.TrimSpace(cfg.UserTokenSecret)
 	return cfg, nil

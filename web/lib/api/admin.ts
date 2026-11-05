@@ -143,6 +143,11 @@ export type AdminConversation = {
   participants?: ConversationParticipant[]
 }
 
+export type ConversationChannelOption = {
+  id: number
+  name: string
+}
+
 export type AdminConversationDetail = AdminConversation & {
   participants?: ConversationParticipant[]
 }
@@ -1262,6 +1267,10 @@ export function fetchConversations(
   return request<PageResult<AdminConversation>>(
     `/api/dashboard/conversation/list${toQueryString(query)}`
   )
+}
+
+export function fetchConversationChannelOptions() {
+  return request<ConversationChannelOption[]>("/api/dashboard/conversation/channel_options")
 }
 
 export function fetchConversationDetail(id: number) {

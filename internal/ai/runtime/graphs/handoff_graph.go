@@ -97,12 +97,10 @@ func (g *HandoffGraph) Run(ctx context.Context, argumentsInJSON string) (string,
 		if err := services.ConversationService.HandoffByAIWithRequestID(g.conversation.ID, g.aiAgent, state.Reason, tracex.RequestIDFromContext(ctx)); err != nil {
 			return "", err
 		}
-		// ConversationService sends the customer-visible handoff notice according to the dispatch decision.
 		return tooling.MarshalToolResult(tooling.ToolResult{
 			Handled:     true,
 			Terminal:    true,
 			Action:      "handoff_confirmed",
-			ReplySent:   true,
 			ShouldRetry: false,
 		}), nil
 	case ConfirmationDecisionCancel:

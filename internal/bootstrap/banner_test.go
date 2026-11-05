@@ -14,7 +14,8 @@ func TestRenderBanner(t *testing.T) {
 	})
 
 	expected := []string{
-		":: AGENT DESK ::",
+		"___) | |___|  _ <",
+		":: AGENT SERVICE::",
 		"Port     : 8083",
 		"DB       : sqlite",
 		"Address  : http://127.0.0.1:8083",

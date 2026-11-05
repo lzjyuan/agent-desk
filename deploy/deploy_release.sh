@@ -57,7 +57,7 @@ if ! systemctl restart agent-service.service; then
   healthy=false
 else
   healthy=false
-  for _ in {1..20}; do
+  for _ in {1..180}; do
     if systemctl is-active --quiet agent-service.service && curl -fsS --max-time 2 http://127.0.0.1:8083/api/config >/dev/null; then
       healthy=true
       break

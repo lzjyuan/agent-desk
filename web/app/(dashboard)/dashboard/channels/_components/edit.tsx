@@ -42,12 +42,15 @@ type ChannelFormDialogProps = {
 
 type Translate = (key: string, values?: Record<string, string | number>) => string
 
+const DEFAULT_WEB_PUBLIC_BASE_URL = "https://chat.honertop.com/"
+
 type WebChannelConfig = {
   title?: string
   subtitle?: string
   themeColor?: string
   position?: "left" | "right"
   width?: string
+  publicBaseUrl?: string
   userTokenSecret?: string
 }
 
@@ -115,7 +118,17 @@ function getDefaultWebChannelConfig(t: Translate): Required<WebChannelConfig> {
     themeColor: "#2563eb",
     position: "right",
     width: "380px",
+    publicBaseUrl: DEFAULT_WEB_PUBLIC_BASE_URL,
     userTokenSecret: "",
+  }
+}
+
+function isPublicBaseUrl(value: string): boolean {
+  try {
+    const url = new URL(value)
+    return (url.protocol === "http:" || url.protocol === "https:") && Boolean(url.host) && !url.username && !url.password && url.pathname === "/" && !url.search && !url.hash
+  } catch {
+    return false
   }
 }
 
@@ -160,10 +173,14 @@ function createSchema(t: Translate) {
       widgetThemeColor: z.string().trim(),
       widgetPosition: z.enum(["left", "right"]),
       widgetWidth: z.string().trim(),
+      publicBaseUrl: z.string().trim(),
       userTokenSecret: z.string().trim(),
       remark: z.string().trim(),
     })
     .superRefine((values, ctx) => {
+      if (values.channelType === "web" && !isPublicBaseUrl(values.publicBaseUrl)) {
+        ctx.addIssue({ code: "custom", path: ["publicBaseUrl"], message: t("channel.publicBaseUrlInvalid") })
+      }
       if (values.channelType === "wxwork_kf" && !values.openKfId.trim()) {
         ctx.addIssue({
           code: "custom",
@@ -248,6 +265,7 @@ type EditForm = {
   widgetThemeColor: string
   widgetPosition: "left" | "right"
   widgetWidth: string
+  publicBaseUrl: string
   userTokenSecret: string
   remark: string
 }
@@ -293,6 +311,7 @@ function createEmptyForm(t: Translate): EditForm {
     widgetThemeColor: defaultWebChannelConfig.themeColor,
     widgetPosition: defaultWebChannelConfig.position,
     widgetWidth: defaultWebChannelConfig.width,
+    publicBaseUrl: defaultWebChannelConfig.publicBaseUrl,
     userTokenSecret: "",
     remark: "",
   }
@@ -423,6 +442,7 @@ function parseWebChannelConfig(configJson: string, t: Translate): Required<WebCh
         parsed.themeColor?.trim() || defaultWebChannelConfig.themeColor,
       position,
       width: parsed.width?.trim() || defaultWebChannelConfig.width,
+      publicBaseUrl: parsed.publicBaseUrl?.trim() || "",
       userTokenSecret: parsed.userTokenSecret?.trim() || "",
     }
   } catch {
@@ -550,6 +570,7 @@ function buildForm(item: AdminChannel | null, t: Translate): EditForm {
     widgetThemeColor: wechatConfig?.themeColor ?? webConfig.themeColor,
     widgetPosition: webConfig.position,
     widgetWidth: webConfig.width,
+    publicBaseUrl: webConfig.publicBaseUrl,
     userTokenSecret: wechatConfig?.userTokenSecret ?? webConfig.userTokenSecret,
     remark: item.remark || "",
   }
@@ -625,6 +646,7 @@ function buildPayload(form: EditForm, status: number, t: Translate): CreateAdmin
                   ...webLikeConfig,
                   position: form.widgetPosition || defaultWebChannelConfig.position,
                   width: form.widgetWidth.trim() || defaultWebChannelConfig.width,
+                  publicBaseUrl: form.publicBaseUrl.trim(),
                   userTokenSecret: form.userTokenSecret.trim(),
                 })
   return {
@@ -713,6 +735,7 @@ function ChannelFormBody({
   const aiAgentId = useWatch({ control, name: "aiAgentId" })
   const openKfId = useWatch({ control, name: "openKfId" })
   const userTokenSecret = useWatch({ control, name: "userTokenSecret" })
+  const publicBaseUrl = useWatch({ control, name: "publicBaseUrl" })
   const emailProvider = useWatch({ control, name: "emailProvider" })
 	const previousRolloutPercent = channelDetail?.previousAiAgentRolloutPercent ?? 0
 
@@ -1529,6 +1552,16 @@ function ChannelFormBody({
                     </>
                   ) : null}
                 </div>
+                {channelType === "web" ? (
+                  <Field data-invalid={!!errors.publicBaseUrl}>
+                    <FieldLabel htmlFor="channel-public-base-url">{t("channel.publicBaseUrl")}</FieldLabel>
+                    <FieldContent>
+                      <Input id="channel-public-base-url" type="url" required placeholder={DEFAULT_WEB_PUBLIC_BASE_URL} {...register("publicBaseUrl")} />
+                      <div className="text-xs text-muted-foreground">{t("channel.publicBaseUrlDescription")}</div>
+                      <FieldError errors={[errors.publicBaseUrl]} />
+                    </FieldContent>
+                  </Field>
+                ) : null}
                 <div className="space-y-3 rounded-md border p-3">
                   <div>
                     <div className="text-sm font-medium">{t("channel.userJwtSecret")}</div>
@@ -1578,7 +1611,7 @@ function ChannelFormBody({
                 {channelType === "wechat_mp" ? (
                   <WechatMPAccessGuide channelId={channelDetail?.channelId || ""} />
                 ) : (
-                  <WebAccessGuide channelId={channelDetail?.channelId || ""} />
+                  <WebAccessGuide channelId={channelDetail?.channelId || ""} publicBaseUrl={publicBaseUrl} />
                 )}
               </>
             ) : null}
@@ -1597,7 +1630,7 @@ function ChannelFormBody({
   )
 }
 
-function WebAccessGuide({ channelId }: { channelId: string }) {
+function WebAccessGuide({ channelId, publicBaseUrl }: { channelId: string; publicBaseUrl: string }) {
   const t = useI18n()
   const [origin, setOrigin] = useState("")
 
@@ -1606,25 +1639,26 @@ function WebAccessGuide({ channelId }: { channelId: string }) {
   }, [])
 
   const accessUrl = useMemo(() => {
-    if (!origin || !channelId) {
+    if (!isPublicBaseUrl(publicBaseUrl) || !channelId) {
       return ""
     }
-    const url = new URL("/support/chat/", origin)
+    const url = new URL("/support/chat/", publicBaseUrl)
     url.searchParams.set("channelId", channelId)
     return url.toString()
-  }, [channelId, origin])
+  }, [channelId, publicBaseUrl])
 
   const testUrl = useMemo(() => {
-    if (!origin || !channelId) {
+    if (!origin || !channelId || !isPublicBaseUrl(publicBaseUrl)) {
       return ""
     }
     const url = new URL(getWidgetDemoPath(), origin)
     url.searchParams.set("channelId", channelId)
+    url.searchParams.set("publicBaseUrl", new URL(publicBaseUrl).origin)
     return url.toString()
-  }, [channelId, origin])
+  }, [channelId, origin, publicBaseUrl])
 
   const snippet = useMemo(() => {
-    if (!origin || !channelId) {
+    if (!isPublicBaseUrl(publicBaseUrl) || !channelId) {
       return ""
     }
     return `<script>
@@ -1632,8 +1666,8 @@ function WebAccessGuide({ channelId }: { channelId: string }) {
     channelId: "${channelId}"
   };
 </script>
-<script async src="${origin}/sdk/agents-service-sdk.min.js"></script>`
-  }, [channelId, origin])
+<script async src="${new URL(publicBaseUrl).origin}/sdk/agents-service-sdk.min.js"></script>`
+  }, [channelId, publicBaseUrl])
 
   async function copyText(text: string, successMessage: string) {
     if (!text) {
@@ -1673,6 +1707,7 @@ function WebAccessGuide({ channelId }: { channelId: string }) {
                   type="button"
                   variant="outline"
                   size="icon"
+                  disabled={!accessUrl}
                   title={t("channel.copyLink")}
                   onClick={() => copyText(accessUrl, t("channel.copiedAccessLink"))}
                 >
@@ -1682,6 +1717,7 @@ function WebAccessGuide({ channelId }: { channelId: string }) {
                   type="button"
                   variant="outline"
                   size="icon"
+                  disabled={!accessUrl}
                   title={t("channel.openLink")}
                   onClick={() => window.open(accessUrl, "_blank", "noopener,noreferrer")}
                 >
@@ -1700,6 +1736,7 @@ function WebAccessGuide({ channelId }: { channelId: string }) {
                 type="button"
                 variant="outline"
                 size="sm"
+                disabled={!snippet}
                 onClick={() => copyText(snippet, t("channel.copiedSnippet"))}
               >
                 <CopyIcon className="size-4" />
@@ -1722,6 +1759,7 @@ function WebAccessGuide({ channelId }: { channelId: string }) {
                 type="button"
                 variant="outline"
                 size="sm"
+                disabled={!testUrl}
                 onClick={() => window.open(testUrl, "_blank", "noopener,noreferrer")}
               >
                 <ExternalLinkIcon className="size-4" />

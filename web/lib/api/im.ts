@@ -111,6 +111,7 @@ export type ImWidgetConfig = {
   themeColor?: string
   position?: "left" | "right"
   width?: string
+  publicBaseUrl?: string
 }
 
 export type ImCustomerSessionCustomer = {

@@ -79,7 +79,7 @@ func (s *customerSessionService) Exchange(channel *models.Channel, externalUser 
 	}
 	return &response.CustomerSessionExchangeResponse{
 		CustomerSessionToken: token,
-		ExpiresAt:            expiresAt.Format(time.DateTime),
+		ExpiresAt:            formatCustomerSessionExpiry(expiresAt),
 		IdentityKey:          s.identityKey(externalUser),
 		Customer: response.CustomerSessionCustomerResponse{
 			ID:   customer.ID,
@@ -196,7 +196,11 @@ func (s *customerSessionService) SetRefreshHeaders(ctx *gin.Context, result *Cus
 		return
 	}
 	ctx.Header(customerSessionHeader, result.Token)
-	ctx.Header(customerSessionExpHeader, result.ExpiresAt.Format(time.DateTime))
+	ctx.Header(customerSessionExpHeader, formatCustomerSessionExpiry(result.ExpiresAt))
+}
+
+func formatCustomerSessionExpiry(expiresAt time.Time) string {
+	return expiresAt.UTC().Format(time.RFC3339)
 }
 
 func (s *customerSessionService) verifyToken(rawToken string) (*customerSessionClaims, error) {

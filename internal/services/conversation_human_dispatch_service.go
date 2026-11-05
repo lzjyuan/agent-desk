@@ -19,14 +19,7 @@ import (
 
 var ConversationHumanDispatchService = newConversationHumanDispatchService()
 
-var (
-	HandoffWaitingMessage  = HandoffWaitingMessageForLocale(i18nx.DefaultLocale)
-	HandoffOffHoursMessage = HandoffOffHoursMessageForLocale(i18nx.DefaultLocale)
-)
-
-func HandoffWaitingMessageForLocale(locale string) string {
-	return i18nx.Getf(locale, "conversation.handoff.waiting")
-}
+var HandoffOffHoursMessage = HandoffOffHoursMessageForLocale(i18nx.DefaultLocale)
 
 func HandoffOffHoursMessageForLocale(locale string) string {
 	return i18nx.Getf(locale, "conversation.handoff.offHours")
@@ -98,7 +91,7 @@ func (s *conversationHumanDispatchService) HandoffByAIWithRequestID(conversation
 	if err := s.markHandoff(conversationID, aiAgent, reason, requestID); err != nil {
 		return nil, err
 	}
-	return s.dispatchAfterHandoffWithRequestID(conversationID, aiAgent.ID, activeTeamIDs, strings.TrimSpace(reason), true, requestID)
+	return s.dispatchAfterHandoffWithRequestID(conversationID, activeTeamIDs, strings.TrimSpace(reason), true, requestID)
 }
 
 func (s *conversationHumanDispatchService) ApplyHumanOnlyCreate(conversationID int64, aiAgent models.AIAgent) (*HandoffDecisionResult, error) {
@@ -108,15 +101,12 @@ func (s *conversationHumanDispatchService) ApplyHumanOnlyCreate(conversationID i
 		if err := s.moveToGlobalPool(conversationID, aiAgent.Name); err != nil {
 			return nil, err
 		}
-		if err := s.sendAIText(conversationID, aiAgent.ID, HandoffWaitingMessage); err != nil {
-			return nil, err
-		}
 		if conversation := ConversationService.Get(conversationID); conversation != nil {
 			WsService.PublishConversationChanged(conversation, enums.IMRealtimeEventConversationPending)
 		}
-		return &HandoffDecisionResult{Decision: HandoffDecisionGlobalPool, Message: HandoffWaitingMessage}, nil
+		return &HandoffDecisionResult{Decision: HandoffDecisionGlobalPool}, nil
 	}
-	return s.dispatchAfterHandoff(conversationID, aiAgent.ID, activeTeamIDs, "仅人工模式新会话", false)
+	return s.dispatchAfterHandoff(conversationID, activeTeamIDs, "仅人工模式新会话", false)
 }
 
 func (s *conversationHumanDispatchService) DispatchPendingConversation(conversationID int64, aiAgent models.AIAgent) (*HandoffDecisionResult, error) {
@@ -160,15 +150,11 @@ func (s *conversationHumanDispatchService) DispatchPendingConversation(conversat
 	return &HandoffDecisionResult{Decision: HandoffDecisionTeamPool, TeamID: teamID}, nil
 }
 
-func (s *conversationHumanDispatchService) dispatchAfterHandoff(conversationID, aiAgentID int64, activeTeamIDs []int64, reason string, publishAssignEvent bool) (*HandoffDecisionResult, error) {
-	return s.dispatchAfterHandoffWithRequestID(conversationID, aiAgentID, activeTeamIDs, reason, publishAssignEvent, "")
+func (s *conversationHumanDispatchService) dispatchAfterHandoff(conversationID int64, activeTeamIDs []int64, reason string, publishAssignEvent bool) (*HandoffDecisionResult, error) {
+	return s.dispatchAfterHandoffWithRequestID(conversationID, activeTeamIDs, reason, publishAssignEvent, "")
 }
 
-func (s *conversationHumanDispatchService) dispatchAfterHandoffWithRequestID(conversationID, aiAgentID int64, activeTeamIDs []int64, reason string, publishAssignEvent bool, requestID string) (*HandoffDecisionResult, error) {
-	if err := s.sendAITextWithRequestID(conversationID, aiAgentID, HandoffWaitingMessage, requestID); err != nil {
-		return nil, err
-	}
-
+func (s *conversationHumanDispatchService) dispatchAfterHandoffWithRequestID(conversationID int64, activeTeamIDs []int64, reason string, publishAssignEvent bool, requestID string) (*HandoffDecisionResult, error) {
 	candidates, _, err := ConversationDispatchService.pickDispatchCandidates(activeTeamIDs, time.Now())
 	if err != nil {
 		return nil, err
@@ -193,7 +179,6 @@ func (s *conversationHumanDispatchService) dispatchAfterHandoffWithRequestID(con
 				Decision:   HandoffDecisionAssigned,
 				TeamID:     dispatched.CurrentTeamID,
 				AssigneeID: dispatched.CurrentAssigneeID,
-				Message:    HandoffWaitingMessage,
 			}, nil
 		}
 	}
@@ -206,7 +191,7 @@ func (s *conversationHumanDispatchService) dispatchAfterHandoffWithRequestID(con
 	if teamPoolConversation != nil {
 		WsService.PublishConversationChanged(teamPoolConversation, enums.IMRealtimeEventConversationPending)
 	}
-	return &HandoffDecisionResult{Decision: HandoffDecisionTeamPool, TeamID: teamID, Message: HandoffWaitingMessage}, nil
+	return &HandoffDecisionResult{Decision: HandoffDecisionTeamPool, TeamID: teamID}, nil
 }
 
 func (s *conversationHumanDispatchService) markHandoff(conversationID int64, aiAgent models.AIAgent, reason string, requestID string) error {
@@ -313,10 +298,6 @@ func (s *conversationHumanDispatchService) createEventWithRequestID(conversation
 	return sqls.WithTransaction(func(ctx *sqls.TxContext) error {
 		return ConversationEventLogService.CreateEventWithRequestID(ctx, conversationID, requestID, eventType, senderType, senderID, content, payload)
 	})
-}
-
-func (s *conversationHumanDispatchService) sendAIText(conversationID, aiAgentID int64, content string) error {
-	return s.sendAITextWithRequestID(conversationID, aiAgentID, content, "")
 }
 
 func (s *conversationHumanDispatchService) sendAITextWithRequestID(conversationID, aiAgentID int64, content string, requestID string) error {

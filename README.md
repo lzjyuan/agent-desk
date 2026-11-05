@@ -119,7 +119,7 @@ Linux 服务器发布流程见 [非 Docker 部署说明](deploy/README.md)。
 
 ### 环境要求
 
-- Go `1.26+`
+- Go `1.27.3+`
 - Node.js `20+`
 - Qdrant
 
@@ -179,18 +179,28 @@ npx --yes pnpm@10.30.2 dev
 
 ```text
 .
-├── cmd/                    # server / migration / generator / testdata
+├── cmd/                    # server / migration / generator / enums / testdata
 ├── internal/
+│   ├── ai/                 # LLM / RAG / Runtime / Skills / MCP
 │   ├── bootstrap/          # 启动、路由、数据库和迁移初始化
 │   ├── builders/           # model / 聚合结果到 response DTO 的映射
+│   ├── discord/            # Discord 渠道客户端
+│   ├── email/              # 邮件渠道客户端和入站解析
+│   ├── events/             # 站内通知事件
 │   ├── handlers/           # dashboard / api / third HTTP handlers
+│   ├── lark/               # 飞书渠道客户端
 │   ├── middleware/         # Gin middleware
 │   ├── migration/          # 幂等数据迁移
 │   ├── models/             # GORM models
+│   ├── oidcclient/         # OIDC 登录客户端
+│   ├── pkg/                # config / dto / enums / httpx / utils 等基础包
 │   ├── repositories/       # 数据访问层
 │   ├── services/           # 业务编排和事务边界
-│   ├── ai/                 # LLM / RAG / Runtime / Skills / MCP
-│   └── pkg/                # config / dto / enums / httpx / utils 等基础包
+│   ├── slack/              # Slack 渠道客户端
+│   ├── telegram/           # Telegram 渠道客户端
+│   ├── web/                # 预留目录，当前为空
+│   ├── wxwork/             # 企业微信登录和回调处理
+│   └── zalo/               # Zalo 渠道客户端
 ├── web/                    # Next.js 前端工程
 │   ├── app/dashboard/      # 管理后台与客服工作台
 │   ├── app/support/        # 客户侧接入和聊天页面
@@ -199,7 +209,8 @@ npx --yes pnpm@10.30.2 dev
 │   └── public/sdk/         # 构建后的嵌入式 SDK
 ├── config/                 # 配置文件
 ├── deploy/                 # 非 Docker 发布脚本
-└── docs/                   # 项目文档
+├── flowgram-editor/        # 工作流编辑器
+└── scripts/                # 辅助脚本
 ```
 
 ## 常用命令

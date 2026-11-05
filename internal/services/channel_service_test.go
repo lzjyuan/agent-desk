@@ -21,6 +21,7 @@ func TestChannelServiceRejectsAgentWithoutPublishedRevision(t *testing.T) {
 
 	_, err := ChannelService.CreateChannel(request.CreateChannelRequest{
 		ChannelType: enums.ChannelTypeWeb,
+		ConfigJSON:  `{"publicBaseUrl":"https://chat.example.com/"}`,
 		AIAgentID:   agent.ID,
 		Name:        "官网客服",
 		Status:      int(enums.StatusOk),
@@ -36,6 +37,7 @@ func TestChannelServiceAllowsAgentWithPublishedRevision(t *testing.T) {
 
 	item, err := ChannelService.CreateChannel(request.CreateChannelRequest{
 		ChannelType: enums.ChannelTypeWeb,
+		ConfigJSON:  `{"publicBaseUrl":"https://chat.example.com/"}`,
 		AIAgentID:   agent.ID,
 		Name:        "官网客服",
 		Status:      int(enums.StatusOk),
@@ -53,14 +55,16 @@ func TestChannelServiceStoresAIAgentRolloutPercent(t *testing.T) {
 	agent := createChannelServiceTestAgent(t, db, 1001)
 	item, err := ChannelService.CreateChannel(request.CreateChannelRequest{
 		ChannelType: enums.ChannelTypeWeb, AIAgentID: agent.ID, AIAgentRolloutPercent: 25,
-		Name: "灰度渠道", Status: int(enums.StatusOk),
+		ConfigJSON: `{"publicBaseUrl":"https://chat.example.com/"}`,
+		Name:       "灰度渠道", Status: int(enums.StatusOk),
 	}, channelServiceTestOperator())
 	if err != nil || item == nil || item.AIAgentRolloutPercent != 25 {
 		t.Fatalf("expected persisted rollout percent, item=%#v err=%v", item, err)
 	}
 	if _, err := ChannelService.CreateChannel(request.CreateChannelRequest{
 		ChannelType: enums.ChannelTypeWeb, AIAgentID: agent.ID, AIAgentRolloutPercent: 101,
-		Name: "错误灰度渠道", Status: int(enums.StatusOk),
+		ConfigJSON: `{"publicBaseUrl":"https://chat.example.com/"}`,
+		Name:       "错误灰度渠道", Status: int(enums.StatusOk),
 	}, channelServiceTestOperator()); err == nil {
 		t.Fatal("expected invalid rollout percent to be rejected")
 	}
@@ -71,7 +75,8 @@ func TestChannelServiceRollsBackPreviousAIAgentRolloutPercent(t *testing.T) {
 	agent := createChannelServiceTestAgent(t, db, 1001)
 	channel, err := ChannelService.CreateChannel(request.CreateChannelRequest{
 		ChannelType: enums.ChannelTypeWeb, AIAgentID: agent.ID, AIAgentRolloutPercent: 20,
-		Name: "渠道灰度回滚", Status: int(enums.StatusOk),
+		ConfigJSON: `{"publicBaseUrl":"https://chat.example.com/"}`,
+		Name:       "渠道灰度回滚", Status: int(enums.StatusOk),
 	}, channelServiceTestOperator())
 	if err != nil {
 		t.Fatalf("create channel: %v", err)

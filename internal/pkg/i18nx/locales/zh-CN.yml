@@ -455,7 +455,6 @@ tool.graph.handoffConversation.appendix: |-
   4. 此 Graph Tool 会先请求用户确认；只有用户确认后才会转人工，用户取消则流程结束。
   5. 如果问题仍可在当前会话解决，继续帮助用户，不要过早升级。
   6. 如果工具返回 terminal=true 且 shouldRetry=false，说明转人工流程已结束，不要重复调用。
-conversation.handoff.waiting: "正在为你接入人工客服，请稍候。"
 conversation.handoff.offHours: "当前不在人工客服服务时间内。你可以继续描述问题，我会尽力协助；也可以在服务时间恢复后再次申请人工客服。"
 notification.ticketAssigned.title: "工单指派提醒"
 notification.ticketAssigned.line: "工单 %s 已指派给你"

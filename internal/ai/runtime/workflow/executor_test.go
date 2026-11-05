@@ -209,8 +209,8 @@ func TestExecutorHandoffToHumanRunsRealDispatchAction(t *testing.T) {
 	}
 
 	notice := services.MessageService.FindOne(sqls.NewCnd().Eq("conversation_id", conversation.ID).Eq("sender_type", enums.IMSenderTypeAI).Desc("id"))
-	if notice == nil || strings.TrimSpace(notice.Content) == "" {
-		t.Fatalf("expected handoff service to send ai notice, got %+v", notice)
+	if notice != nil {
+		t.Fatalf("handoff should not send an ai notice, got %+v", notice)
 	}
 }
 

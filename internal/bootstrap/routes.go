@@ -223,6 +223,7 @@ func registerDashboardTagRoutes(group *gin.RouterGroup) {
 
 func registerDashboardConversationRoutes(group *gin.RouterGroup) {
 	group.POST("/translate", dashboard.ConversationPostTranslate)
+	group.GET("/channel_options", dashboard.ConversationGetChannel_options)
 	group.GET("/:id", dashboard.ConversationGetBy)
 	group.POST("/add_tag", dashboard.ConversationPostAdd_tag)
 	group.POST("/assign", dashboard.ConversationPostAssign)

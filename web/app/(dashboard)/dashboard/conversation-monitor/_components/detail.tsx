@@ -293,8 +293,8 @@ export function ConversationDetailDialog({
                   value={currentConversation.currentAssigneeName || "-"}
                 />
                 <InfoItem
-                  label={t("conversation.channelId")}
-                  value={`${currentConversation.channelId || "-"}`}
+                  label={currentConversation.channelName?.trim() ? t("conversationMonitor.channel") : t("conversation.channelId")}
+                  value={currentConversation.channelName?.trim() || `${currentConversation.channelId || "-"}`}
                 />
                 <InfoItem
                   label={t("conversationMonitor.agentUnread")}

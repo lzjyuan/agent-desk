@@ -5,6 +5,7 @@ import { CheckIcon, CopyIcon } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 
 import type { AgentDeskConfig } from "@/lib/sdk/config-types"
+import { fetchImWidgetConfig } from "@/lib/api/im"
 import { useI18n } from "@/i18n/provider"
 
 const STORAGE_KEY = "agent-desk-web-widget-test-config"
@@ -126,7 +127,7 @@ export function SupportWidgetDemo() {
     jwtTtlMinutes: DEFAULT_JWT_TTL_MINUTES,
   })
   const [status, setStatus] = useState(t("widgetDemo.missingChannel"))
-  const [origin, setOrigin] = useState("")
+  const [publicOrigin, setPublicOrigin] = useState("")
   const [generatedToken, setGeneratedToken] = useState("")
   const [latestDirectChatUrl, setLatestDirectChatUrl] = useState("")
   const [copied, setCopied] = useState(false)
@@ -166,7 +167,25 @@ export function SupportWidgetDemo() {
   useEffect(() => {
     const timer = window.setTimeout(() => {
       const initialConfig = getDefaultConfig(t("widgetDemo.defaultName"))
-      setOrigin(window.location.origin)
+      const rawPublicBaseUrl = new URLSearchParams(window.location.search).get("publicBaseUrl")
+      try {
+        const url = new URL(rawPublicBaseUrl || "")
+        if ((url.protocol === "http:" || url.protocol === "https:") && !url.username && !url.password) {
+          setPublicOrigin(url.origin)
+        }
+      } catch {
+        setPublicOrigin("")
+      }
+      if (!rawPublicBaseUrl && initialConfig.channelId) {
+        void fetchImWidgetConfig().then((channel) => {
+          try {
+            const url = new URL(channel.publicBaseUrl || "")
+            if ((url.protocol === "http:" || url.protocol === "https:") && !url.username && !url.password) {
+              setPublicOrigin(url.origin)
+            }
+          } catch {}
+        }).catch(() => {})
+      }
       setConfig(initialConfig)
       setStatus(initialConfig.channelId ? t("widgetDemo.mounted") : t("widgetDemo.missingChannel"))
 
@@ -186,9 +205,8 @@ export function SupportWidgetDemo() {
   }, [t])
 
   const snippet = useMemo(() => {
-    const scriptSrc = origin
-      ? `${origin}/sdk/agents-service-sdk.min.js`
-      : "/sdk/agents-service-sdk.min.js"
+    if (!publicOrigin) return ""
+    const scriptSrc = `${publicOrigin}/sdk/agents-service-sdk.min.js`
 
     const configLines = [`    channelId: "${config.channelId || ""}"`]
     if (config.authMode === "jwt") {
@@ -205,7 +223,20 @@ ${configLines.join(",\n")}
   };
 </script>
 <script async src="${scriptSrc}"></script>`
-  }, [config.authMode, config.channelId, origin])
+  }, [config.authMode, config.channelId, publicOrigin])
+
+  async function getDirectChatUrl() {
+    if (!publicOrigin) {
+      throw new Error(t("widgetDemo.publicBaseUrlRequired"))
+    }
+    if (!window.AgentDeskWidget) {
+      throw new Error(t("widgetDemo.linkFailed"))
+    }
+    const url = new URL(await window.AgentDeskWidget.getChatUrl())
+    url.searchParams.delete("baseUrl")
+    url.searchParams.delete("apiBaseUrl")
+    return new URL(`${url.pathname}${url.search}${url.hash}`, publicOrigin).toString()
+  }
 
   function updateField<K extends keyof WidgetDemoConfig>(
     key: K,
@@ -229,7 +260,7 @@ ${configLines.join(",\n")}
       return
     }
     try {
-      const url = await window.AgentDeskWidget.getChatUrl()
+      const url = await getDirectChatUrl()
       setLatestDirectChatUrl(url)
       if (config.authMode === "jwt") {
         setGeneratedToken(new URL(url).searchParams.get("userToken") || "")
@@ -247,7 +278,7 @@ ${configLines.join(",\n")}
       return
     }
     try {
-      const url = await window.AgentDeskWidget.getChatUrl()
+      const url = await getDirectChatUrl()
       setLatestDirectChatUrl(url)
       if (config.authMode === "jwt") {
         setGeneratedToken(new URL(url).searchParams.get("userToken") || "")
@@ -259,7 +290,7 @@ ${configLines.join(",\n")}
   }
 
   async function handleCopySnippet() {
-    if (typeof navigator === "undefined") {
+    if (!snippet || typeof navigator === "undefined") {
       return
     }
     await navigator.clipboard.writeText(snippet)
@@ -270,7 +301,7 @@ ${configLines.join(",\n")}
   return (
     <main className="min-h-svh bg-slate-50 px-6 py-8 text-slate-950">
       <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[360px_minmax(0,1fr)]">
-        <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+        <section className="min-w-0 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
           <div className="text-base font-semibold">{t("widgetDemo.title")}</div>
           <div className="mt-1 text-sm text-slate-500">{status}</div>
 
@@ -338,7 +369,7 @@ ${configLines.join(",\n")}
           </div>
         </section>
 
-        <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+        <section className="min-w-0 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
           <div className="text-base font-semibold">{t("widgetDemo.snippetTitle")}</div>
           {config.authMode === "jwt" ? (
             <div className="mt-2 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">
@@ -348,6 +379,7 @@ ${configLines.join(",\n")}
           <div className="relative mt-4">
             <button
               type="button"
+              disabled={!snippet}
               onClick={() => void handleCopySnippet()}
               className="absolute right-2 top-2 inline-flex size-8 items-center justify-center rounded-md border border-white/10 bg-white/10 text-slate-200 transition hover:bg-white/20 hover:text-white"
               aria-label={snippetCopied ? t("widgetDemo.copiedSnippet") : t("widgetDemo.copySnippet")}
@@ -360,7 +392,7 @@ ${configLines.join(",\n")}
               )}
             </button>
             <pre className="overflow-x-auto rounded-md bg-slate-950 p-4 pr-12 text-xs leading-5 text-slate-100">
-              <code>{snippet}</code>
+              <code>{snippet || t("widgetDemo.publicBaseUrlRequired")}</code>
             </pre>
           </div>
           <div className="mt-5">
@@ -374,7 +406,7 @@ ${configLines.join(",\n")}
               <div className="flex gap-2">
                 <button
                   type="button"
-                  disabled={!config.channelId}
+                  disabled={!config.channelId || !publicOrigin}
                   onClick={() => void handleCopyDirectUrl()}
                   className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
                 >
@@ -382,7 +414,7 @@ ${configLines.join(",\n")}
                 </button>
                 <button
                   type="button"
-                  disabled={!config.channelId}
+                  disabled={!config.channelId || !publicOrigin}
                   onClick={() => void handleOpenDirectChat()}
                   className="rounded-md bg-slate-950 px-3 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
                 >

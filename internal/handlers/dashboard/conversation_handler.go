@@ -33,6 +33,14 @@ func ConversationAnyList(ctx *gin.Context) {
 		params.QueryFilter{ParamName: "serviceMode"},
 		params.QueryFilter{ParamName: "currentAssigneeId"},
 	).Desc("last_message_at").Desc("id")
+	if raw, ok := params.Get(ctx, "channelId"); ok {
+		channelID, err := strconv.ParseInt(strings.TrimSpace(raw), 10, 64)
+		if err != nil || channelID <= 0 {
+			httpx.WriteJSON(ctx, httpx.JsonErrorMsg(ctx, "error.e0133"))
+			return
+		}
+		cnd.Eq("channel_id", channelID)
+	}
 
 	paging := params.GetPaging(ctx)
 
@@ -68,6 +76,20 @@ func ConversationAnyList(ctx *gin.Context) {
 	list, paging := services.ConversationService.FindPageByCnd(cnd)
 	results := buildConversationResponses(list, i18nx.Locale(ctx))
 	httpx.WriteJSON(ctx, &web.PageResult{Results: results, Page: paging})
+}
+
+func ConversationGetChannel_options(ctx *gin.Context) {
+	if _, err := services.AuthService.RequirePermission(ctx, constants.PermissionConversationView); err != nil {
+		httpx.WriteJSON(ctx, err)
+		return
+	}
+
+	channels := services.ChannelService.Find(sqls.NewCnd().Asc("name").Asc("id"))
+	options := make([]response.ConversationChannelOptionResponse, 0, len(channels))
+	for _, channel := range channels {
+		options = append(options, response.ConversationChannelOptionResponse{ID: channel.ID, Name: channel.Name})
+	}
+	httpx.WriteJSON(ctx, options)
 }
 
 func ConversationAnyConversations(ctx *gin.Context) {
