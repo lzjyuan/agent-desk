@@ -7,6 +7,9 @@ import (
 	applicationruntime "agent-desk/internal/ai/application/runtime"
 	"agent-desk/internal/models"
 	"agent-desk/internal/pkg/enums"
+	svc "agent-desk/internal/services"
+
+	"github.com/mlogclub/simple/sqls"
 )
 
 func TestReplyEligibilityCanReply(t *testing.T) {
@@ -82,6 +85,54 @@ func TestResolveReplyTimeout(t *testing.T) {
 	aiAgent.ReplyTimeoutSeconds = 999
 	if got := service.resolveReplyTimeout(aiAgent); got != 600*time.Second {
 		t.Fatalf("expected clamped timeout, got %v", got)
+	}
+}
+
+func TestStepLimitQueuesHumanHandoffWithoutNotice(t *testing.T) {
+	db := setupReplyCommitTestDB(t)
+	aiAgent := createReplyCommitTestAIAgent(t, db)
+	conversation := createReplyCommitTestConversation(t, db, aiAgent.ID)
+	message := models.Message{ID: 101, RequestID: "step-limit-101"}
+	replyCtx := aiReplyContext{Conversation: *conversation, Message: message, AIAgent: *aiAgent}
+
+	if err := newAIReplyService().handleStepLimit(replyCtx); err != nil {
+		t.Fatalf("handle step limit: %v", err)
+	}
+	items := svc.MessageService.Find(sqls.NewCnd().Eq("conversation_id", conversation.ID))
+	if len(items) != 0 {
+		t.Fatalf("step limit handoff should not send a customer message, got %+v", items)
+	}
+	current := svc.ConversationService.Get(conversation.ID)
+	if current == nil || current.Status != enums.IMConversationStatusPending || current.HandoffAt == nil || current.HandoffReason != "agent loop exceeded max steps" {
+		t.Fatalf("expected audited human handoff in global pool, got %+v", current)
+	}
+}
+
+func TestStepLimitHandoffDuringServiceHoursSendsNoNotice(t *testing.T) {
+	db := setupReplyCommitTestDB(t)
+	if err := db.AutoMigrate(&models.AgentTeam{}, &models.AgentTeamSchedule{}, &models.AgentProfile{}, &models.ConversationAssignment{}, &models.User{}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Create(&models.AgentTeam{ID: 1, Name: "support", Status: enums.StatusOk}).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Create(&models.AgentTeamSchedule{TeamID: 1, StartAt: time.Now().Add(-time.Hour), EndAt: time.Now().Add(time.Hour), Status: enums.StatusOk}).Error; err != nil {
+		t.Fatal(err)
+	}
+	aiAgent := createReplyCommitTestAIAgent(t, db)
+	aiAgent.FallbackMode = enums.AIAgentFallbackModeHandoff
+	aiAgent.TeamIDs = "1"
+	conversation := createReplyCommitTestConversation(t, db, aiAgent.ID)
+	replyCtx := aiReplyContext{Conversation: *conversation, Message: models.Message{ID: 103}, AIAgent: *aiAgent}
+	if err := newAIReplyService().handleStepLimit(replyCtx); err != nil {
+		t.Fatalf("handoff after step limit: %v", err)
+	}
+	if items := svc.MessageService.Find(sqls.NewCnd().Eq("conversation_id", conversation.ID)); len(items) != 0 {
+		t.Fatalf("handoff should not send a notice, got %+v", items)
+	}
+	current := svc.ConversationService.Get(conversation.ID)
+	if current == nil || current.Status != enums.IMConversationStatusPending || current.HandoffAt == nil {
+		t.Fatalf("expected pending human handoff, got %+v", current)
 	}
 }
 

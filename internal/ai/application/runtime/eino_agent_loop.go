@@ -49,7 +49,7 @@ func einoAgentLoop(
 	agent, err := react.NewAgent(ctx, &react.AgentConfig{
 		ToolCallingModel: model,
 		ToolsConfig:      compose.ToolsNodeConfig{Tools: tools},
-		MaxStep:          maxSteps,
+		MaxStep:          einoGraphMaxSteps(maxSteps),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("create Eino agent loop: %w", err)
@@ -75,6 +75,11 @@ func einoAgentLoop(
 		ret.CompletionTokens = result.ResponseMeta.Usage.CompletionTokens
 	}
 	return ret, nil
+}
+
+// Eino counts model and tool nodes separately; the configured limit counts model turns.
+func einoGraphMaxSteps(modelTurns int) int {
+	return 2*modelTurns - 1
 }
 
 func newEinoChatModel(ctx context.Context, config models.AIConfig) (einomodel.ToolCallingChatModel, error) {

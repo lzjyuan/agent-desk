@@ -29,7 +29,7 @@ test("message sound reuses the MP3, deduplicates messages, avoids overlap and al
   try {
     await playMessageSound("101:1:1")
     const [instance] = instances
-    assert.equal(instance.src, "/sounds/news.mp3")
+    assert.equal(instance.src, "/sounds/customer-message.mp3")
     assert.equal(instance.currentTime, 0)
     assert.equal(playCount, 1)
 
@@ -51,17 +51,17 @@ test("message sound reuses the MP3, deduplicates messages, avoids overlap and al
     assert.equal(playCount, 4)
 
     await playMessageSound("102:1:5", "notice")
-    assert.equal(instance.src, "/sounds/notice.mp3")
+    assert.equal(instance.src, "/sounds/customer-message.mp3")
     assert.equal(playCount, 5)
     assert.equal(pauseCount, 1)
     await playMessageSound("102:1:5", "notice")
     await playMessageSound("102:1:6")
     assert.equal(playCount, 5)
-    assert.equal(instance.src, "/sounds/notice.mp3")
+    assert.equal(instance.src, "/sounds/customer-message.mp3")
 
     instance.paused = true
     await playMessageSound("102:1:7")
-    assert.equal(instance.src, "/sounds/news.mp3")
+    assert.equal(instance.src, "/sounds/customer-message.mp3")
     assert.equal(playCount, 6)
 
     instance.paused = true

@@ -30,6 +30,7 @@ import {
 } from "@/lib/im-message";
 import { formatDateTime } from "@/lib/utils";
 import { useI18n } from "@/i18n/provider";
+import { ReadingTranslation, TranslationToolbar } from "../../conversations/_components/translation-assistant";
 
 type ConversationDetailDialogProps = {
   open: boolean;
@@ -368,6 +369,7 @@ export function ConversationDetailDialog({
           </aside>
 
           <section className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background">
+            <TranslationToolbar readingOnly />
             <ConversationMessageScroller
               key={currentConversation.id}
               className="min-h-0 flex-1"
@@ -463,27 +465,33 @@ function ConversationMonitorMessage({
         variant={variant}
         className={isRecalled ? getRecalledBubbleClassName(message) : undefined}
       >
-        {isRecalled ? (
-          <div className={htmlClassName}>
-            {t("conversationMonitor.messageRecalledBody")}
-          </div>
-        ) : isHtmlMessage ? (
-          <ImMessageHTML
-            html={renderIMMessageHTML(message)}
-            className={`${htmlClassName} [&_img]:max-w-full [&_img]:cursor-zoom-in`}
-            onImageClick={onImagePreview}
-          />
-        ) : isImageMessage ? (
-          <MessageImage
-            src={getImageMessageUrl(message)}
-            alt={getMessageContent(message)}
-            onPreview={onImagePreview}
-          />
-        ) : (
-          <div className="whitespace-pre-wrap break-words">
-            {getMessageContent(message)}
-          </div>
-        )}
+        <ReadingTranslation
+          message={message}
+          html={isRecalled ? "" : renderIMMessageHTML(message)}
+          onImageClick={onImagePreview}
+        >
+          {isRecalled ? (
+            <div className={htmlClassName}>
+              {t("conversationMonitor.messageRecalledBody")}
+            </div>
+          ) : isHtmlMessage ? (
+            <ImMessageHTML
+              html={renderIMMessageHTML(message)}
+              className={`${htmlClassName} [&_img]:max-w-full [&_img]:cursor-zoom-in`}
+              onImageClick={onImagePreview}
+            />
+          ) : isImageMessage ? (
+            <MessageImage
+              src={getImageMessageUrl(message)}
+              alt={getMessageContent(message)}
+              onPreview={onImagePreview}
+            />
+          ) : (
+            <div className="whitespace-pre-wrap break-words">
+              {getMessageContent(message)}
+            </div>
+          )}
+        </ReadingTranslation>
       </ConversationMessageBubble>
     </ConversationMessageRow>
   );

@@ -12,6 +12,7 @@ import { toast } from "sonner"
 
 import { ConversationCloseDialog } from "@/components/conversation-actions/close-dialog"
 import { ConversationTransferDialog } from "@/components/conversation-actions/transfer-dialog"
+import { useAuth } from "@/components/auth-provider"
 import {
   DashboardPage,
   DashboardTableShell,
@@ -65,6 +66,7 @@ import {
 import { useI18n } from "@/i18n/provider"
 import { formatDateTime } from "@/lib/utils"
 import { ConversationDetailDialog } from "./_components/detail"
+import { TranslationProvider } from "../conversations/_components/translation-assistant"
 
 const RECONNECT_BASE_DELAY = 2000
 const RECONNECT_MAX_DELAY = 30000
@@ -117,6 +119,8 @@ function getStatusOptions(
 
 export default function DashboardConversationsPage() {
   const t = useI18n()
+  const { session } = useAuth()
+  const accountId = session?.user?.id ?? 0
   const statusOptions = useMemo(() => getStatusOptions(t), [t])
   const [keywordInput, setKeywordInput] = useState("")
   const [statusFilterInput, setStatusFilterInput] = useState("all")
@@ -867,48 +871,50 @@ export default function DashboardConversationsPage() {
         </DashboardTableShell>
       </DashboardPage>
 
-      <ConversationDetailDialog
-        open={detailOpen}
-        loading={detailLoading}
-        saving={actionLoadingId === detailItem?.id}
-        item={detailItem}
-        detail={detailData}
-        messages={detailMessages}
-        messagesHasMore={detailMessagesHasMore}
-        loadingMoreMessages={detailMessagesLoadingMore}
-        onLoadMoreMessages={loadMoreDetailMessages}
-        onOpenChange={handleDetailOpenChange}
-        onOpenAssign={() => {
-          if (!detailItem) {
-            return
-          }
-          openAssign(detailItem)
-        }}
-        onDispatch={async () => {
-          if (!detailItem) {
-            return
-          }
-          await handleDispatch(detailItem)
-        }}
-        onOpenTransfer={() => {
-          if (!detailItem) {
-            return
-          }
-          openTransfer(detailItem)
-        }}
-        onRead={async () => {
-          if (!detailItem) {
-            return
-          }
-          await handleRead(detailItem)
-        }}
-        onOpenClose={() => {
-          if (!detailItem) {
-            return
-          }
-          openClose(detailItem)
-        }}
-      />
+      <TranslationProvider key={accountId} accountId={accountId}>
+        <ConversationDetailDialog
+          open={detailOpen}
+          loading={detailLoading}
+          saving={actionLoadingId === detailItem?.id}
+          item={detailItem}
+          detail={detailData}
+          messages={detailMessages}
+          messagesHasMore={detailMessagesHasMore}
+          loadingMoreMessages={detailMessagesLoadingMore}
+          onLoadMoreMessages={loadMoreDetailMessages}
+          onOpenChange={handleDetailOpenChange}
+          onOpenAssign={() => {
+            if (!detailItem) {
+              return
+            }
+            openAssign(detailItem)
+          }}
+          onDispatch={async () => {
+            if (!detailItem) {
+              return
+            }
+            await handleDispatch(detailItem)
+          }}
+          onOpenTransfer={() => {
+            if (!detailItem) {
+              return
+            }
+            openTransfer(detailItem)
+          }}
+          onRead={async () => {
+            if (!detailItem) {
+              return
+            }
+            await handleRead(detailItem)
+          }}
+          onOpenClose={() => {
+            if (!detailItem) {
+              return
+            }
+            openClose(detailItem)
+          }}
+        />
+      </TranslationProvider>
       <ConversationCloseDialog
         open={closeOpen}
         conversationId={closeItem?.id ?? null}

@@ -38,7 +38,7 @@ const defaults: TranslationSettings = {
   reading: false,
   writing: false,
   readingLanguage: "zh-CN",
-  writingLanguage: "id",
+  writingLanguage: "en",
   display: "both",
 }
 const languages: TranslationLanguage[] = ["zh-CN", "en", "id"]
@@ -61,13 +61,15 @@ export function TranslationProvider({
   const [settings, setSettings] = useState<TranslationSettings>(() => {
     try {
       const saved = JSON.parse(localStorage.getItem(key) || "{}")
+      const legacyWritingDefaults = saved.writing === false &&
+        saved.writingLanguage === "id" && saved.writingDefaultsVersion !== 2
       return {
         reading: saved.reading === true,
         writing: saved.writing === true,
         readingLanguage: languages.includes(saved.readingLanguage)
           ? saved.readingLanguage
           : defaults.readingLanguage,
-        writingLanguage: languages.includes(saved.writingLanguage)
+        writingLanguage: legacyWritingDefaults ? defaults.writingLanguage : languages.includes(saved.writingLanguage)
           ? saved.writingLanguage
           : defaults.writingLanguage,
         display: saved.display === "translation" ? "translation" : "both",
@@ -82,7 +84,7 @@ export function TranslationProvider({
     setSettings((previous) => {
       const value = { ...previous, ...next }
       try {
-        localStorage.setItem(key, JSON.stringify(value))
+        localStorage.setItem(key, JSON.stringify({ ...value, writingDefaultsVersion: 2 }))
       } catch {
         /* Private browsing may disable storage. */
       }
@@ -96,7 +98,7 @@ export function TranslationProvider({
   )
 }
 
-export function TranslationToolbar() {
+export function TranslationToolbar({ readingOnly = false }: { readingOnly?: boolean }) {
   const t = useI18n()
   const { settings, update } = useTranslationSettings()
   const options = languages.map((value) => ({
@@ -109,7 +111,7 @@ export function TranslationToolbar() {
         <PopoverTrigger render={<Button size="sm" variant="ghost" />}>
           <LanguagesIcon className="size-4" />
           {t("translation.title")}
-          {settings.reading || settings.writing ? (
+          {settings.reading || (!readingOnly && settings.writing) ? (
             <span className="size-1.5 rounded-full bg-emerald-500" />
           ) : null}
         </PopoverTrigger>
@@ -155,26 +157,30 @@ export function TranslationToolbar() {
               placeholder={t("translation.display")}
             />
           </div>
-          <label className="flex items-center gap-2 text-sm">
-            <Checkbox
-              checked={settings.writing}
-              onCheckedChange={(checked) =>
-                update({ writing: checked === true })
-              }
-            />
-            {t("translation.autoWriting")}
-          </label>
-          <div className="space-y-1 text-sm">
-            <p>{t("translation.writingLanguage")}</p>
-            <OptionCombobox
-              options={options}
-              value={settings.writingLanguage}
-              onChange={(value) =>
-                update({ writingLanguage: value as TranslationLanguage })
-              }
-              placeholder={t("translation.writingLanguage")}
-            />
-          </div>
+          {!readingOnly ? (
+            <>
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox
+                  checked={settings.writing}
+                  onCheckedChange={(checked) =>
+                    update({ writing: checked === true })
+                  }
+                />
+                {t("translation.autoWriting")}
+              </label>
+              <div className="space-y-1 text-sm">
+                <p>{t("translation.writingLanguage")}</p>
+                <OptionCombobox
+                  options={options}
+                  value={settings.writingLanguage}
+                  onChange={(value) =>
+                    update({ writingLanguage: value as TranslationLanguage })
+                  }
+                  placeholder={t("translation.writingLanguage")}
+                />
+              </div>
+            </>
+          ) : null}
           <p className="text-xs text-muted-foreground">
             {t("translation.settingsHint")}
           </p>
@@ -304,7 +310,7 @@ export function ReadingTranslation({
   message: AgentMessage
   html: string
   children: ReactNode
-  onImageSettled: () => void
+  onImageSettled?: () => void
   onImageClick: (src: string, alt?: string) => void
 }) {
   const t = useI18n()
@@ -319,7 +325,7 @@ export function ReadingTranslation({
   }>()
   const eligible =
     settings.reading &&
-    message.senderType === "customer" &&
+    ["customer", "agent", "ai"].includes(message.senderType) &&
     !message.recalledAt &&
     message.sendStatus !== 6 &&
     ["text", "html"].includes(message.messageType)
@@ -370,6 +376,7 @@ export function ReadingTranslation({
     t,
   ])
   const value = eligible ? current?.value : undefined
+  const isAgentMessage = message.senderType === "agent"
   return (
     <div ref={ref}>
       {value && settings.display === "translation" ? (
@@ -377,14 +384,15 @@ export function ReadingTranslation({
           {value.translatedHTML ? (
             <ImMessageHTML
               html={readingHTML(value.translatedHTML, html)}
+              className={isAgentMessage ? "[&_p]:text-white [&_a]:text-white [&_a]:underline" : undefined}
               onImageSettled={onImageSettled}
               onImageClick={onImageClick}
             />
           ) : (
-            <p className="break-words whitespace-pre-wrap">{value.translatedText}</p>
+            <p className={`break-words whitespace-pre-wrap ${isAgentMessage ? "text-white" : ""}`}>{value.translatedText}</p>
           )}
           <details className="mt-2 text-xs">
-            <summary className="cursor-pointer text-muted-foreground">
+            <summary className={`cursor-pointer ${isAgentMessage ? "text-white/80" : "text-muted-foreground"}`}>
               {t("translation.original")}
             </summary>
             <div className="mt-1 text-sm">{children}</div>
@@ -395,14 +403,14 @@ export function ReadingTranslation({
       )}
       {eligible && (value || current?.error || visible) && (
         <div
-          className="mt-2 border-t border-border/60 pt-2 text-xs text-muted-foreground"
+          className={`mt-2 border-t pt-2 text-xs ${isAgentMessage ? "border-white/30 text-white/80" : "border-border/60 text-muted-foreground"}`}
           aria-live="polite"
         >
           {value ? (
             settings.display === "both" ? (
               <>
                 <p>{t("translation.translated")}</p>
-                  <p className="mt-1 break-words whitespace-pre-wrap text-sm text-foreground">
+                <p className={`mt-1 break-words whitespace-pre-wrap text-sm ${isAgentMessage ? "text-white" : "text-foreground"}`}>
                   {value.translatedText}
                 </p>
               </>

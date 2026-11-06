@@ -1290,6 +1290,7 @@
     "greetingDescription": "进入会话时发送的首次回复，留空时不主动发送。",
     "sectionKnowledge": "知识库",
     "knowledgeDescription": "Agent 回答时可以检索的知识范围。",
+    "unavailableKnowledgeRemoved": "已从当前配置中移除 {count} 个不可用知识库。保存后生效；已发布的 Agent 需重新发布。",
     "sectionSkill": "Skill",
     "skillDescription": "Agent 可以调用的标准能力。",
     "sectionWorkflow": "工作流",
@@ -3337,7 +3338,7 @@
   },
   "translation": {
     "title": "翻译助手",
-    "autoReading": "自动翻译客户消息",
+    "autoReading": "自动翻译会话消息",
     "autoWriting": "边写边译",
     "readingLanguage": "阅读语言",
     "writingLanguage": "发送语言",

@@ -554,7 +554,7 @@ export function DocumentList({ knowledgeBaseId, onActionStateChange }: DocumentL
                           >
                             <MoreHorizontalIcon className="size-3.5" />
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-32 min-w-32">
+                          <DropdownMenuContent align="end" className="w-32 min-w-32" onClick={(event) => event.stopPropagation()}>
                             <DropdownMenuItem onClick={() => openDetailDialog(item)}>
                               <EyeIcon className="mr-2 size-3.5" />
                               {t("knowledge.view")}
@@ -657,7 +657,7 @@ export function DocumentList({ knowledgeBaseId, onActionStateChange }: DocumentL
                         >
                           <MoreHorizontalIcon className="size-3.5" />
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-32 min-w-32">
+                        <DropdownMenuContent align="end" className="w-32 min-w-32" onClick={(event) => event.stopPropagation()}>
                           <DropdownMenuItem onClick={() => openDetailDialog(item)}>
                             <EyeIcon className="mr-2 size-3.5" />
                             {t("knowledge.view")}

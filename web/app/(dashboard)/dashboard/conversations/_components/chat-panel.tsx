@@ -649,12 +649,19 @@ const MessageItem = memo(
                   isRecalled ? recalledBubbleClassName : bubbleClassName
                 }`}
               >
-                <ImMessageHTML
+                <ReadingTranslation
+                  message={message}
                   html={htmlContent}
-                  className={isRecalled ? recalledHtmlClassName : htmlClassName}
                   onImageSettled={onImageSettled}
-                  onImageClick={isRecalled ? undefined : openImageLightbox}
-                />
+                  onImageClick={openImageLightbox}
+                >
+                  <ImMessageHTML
+                    html={htmlContent}
+                    className={isRecalled ? recalledHtmlClassName : htmlClassName}
+                    onImageSettled={onImageSettled}
+                    onImageClick={isRecalled ? undefined : openImageLightbox}
+                  />
+                </ReadingTranslation>
               </ConversationMessageBubble>
               <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
                 <span>{formatDateTime(message.sentAt || "")}</span>

@@ -217,7 +217,19 @@ export function AIAgentConfigWorkbench({
       setFallbackMessage(detail.fallbackMessage || "")
       setSelectedTeamIds((detail.teams ?? []).map((team) => team.id))
       setSelectedSkillIds(detail.skillIds ?? [])
-      setSelectedKnowledgeBaseIds(detail.knowledgeBaseIds ?? [])
+      const selectedIds = detail.knowledgeBaseIds ?? []
+      if (knowledgeBaseListRes.status === "fulfilled") {
+        const availableIds = new Set(knowledgeBaseList.map((item) => item.id))
+        const validIds = selectedIds.filter((id) => availableIds.has(id))
+        setSelectedKnowledgeBaseIds(validIds)
+        if (validIds.length !== selectedIds.length) {
+          toast.info(t("aiAgent.unavailableKnowledgeRemoved", {
+            count: selectedIds.length - validIds.length,
+          }))
+        }
+      } else {
+        setSelectedKnowledgeBaseIds(selectedIds)
+      }
       setMCPTools(normalizeMCPToolsWithCatalog(detail.mcpTools ?? [], catalog ?? []))
       setWorkflowBindings(
         (detail.workflowBindings ?? []).map(

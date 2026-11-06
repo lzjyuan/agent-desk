@@ -7,10 +7,7 @@ export async function playMessageSound(messageKey: string, sound: MessageSound =
   messageKey = `${sound}:${messageKey}`
   if (typeof Audio === "undefined" || playedMessages.has(messageKey)) return
 
-  const source = sound === "notice"
-    ? "/sounds/notice.mp3"
-    : sound === "customer" ? "/sounds/customer-message.mp3" : "/sounds/news.mp3"
-  audio ??= new Audio(source)
+  audio ??= new Audio("/sounds/customer-message.mp3")
   playedMessages.add(messageKey)
   if (playedMessages.size > 500) {
     playedMessages.delete(playedMessages.values().next().value!)
@@ -21,7 +18,6 @@ export async function playMessageSound(messageKey: string, sound: MessageSound =
   }
 
   try {
-    if (playingSound !== sound) audio.src = source
     playingSound = sound
     audio.currentTime = 0
     await audio.play()

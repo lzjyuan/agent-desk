@@ -1290,6 +1290,7 @@
     "greetingDescription": "Initial reply sent when entering the conversation. Leave empty to not send.",
     "sectionKnowledge": "Knowledge Bases",
     "knowledgeDescription": "Knowledge sources the agent can retrieve when answering.",
+    "unavailableKnowledgeRemoved": "Removed {count} unavailable knowledge base(s) from the current configuration. Save to apply; publish again to update a live agent.",
     "sectionSkill": "Skills",
     "skillDescription": "Standard capabilities and workflows the agent can invoke.",
     "sectionWorkflow": "Workflows",
@@ -3338,7 +3339,7 @@
   },
   "translation": {
     "title": "Translation Assistant",
-    "autoReading": "Automatically translate customer messages",
+    "autoReading": "Automatically translate conversation messages",
     "autoWriting": "Translate while typing",
     "readingLanguage": "Reading language",
     "writingLanguage": "Sending language",

@@ -75,6 +75,15 @@ func (s *conversationHumanDispatchService) HandoffByAI(conversationID int64, aiA
 }
 
 func (s *conversationHumanDispatchService) HandoffByAIWithRequestID(conversationID int64, aiAgent models.AIAgent, reason string, requestID string) (*HandoffDecisionResult, error) {
+	return s.handoffByAIWithRequestID(conversationID, aiAgent, reason, requestID, false)
+}
+
+// HandoffAfterStepLimit queues the conversation even when no team is on duty.
+func (s *conversationHumanDispatchService) HandoffAfterStepLimit(conversationID int64, aiAgent models.AIAgent, requestID string) (*HandoffDecisionResult, error) {
+	return s.handoffByAIWithRequestID(conversationID, aiAgent, "agent loop exceeded max steps", requestID, true)
+}
+
+func (s *conversationHumanDispatchService) handoffByAIWithRequestID(conversationID int64, aiAgent models.AIAgent, reason string, requestID string, queueOffHours bool) (*HandoffDecisionResult, error) {
 	conversation := ConversationService.Get(conversationID)
 	if conversation == nil {
 		return nil, errorsx.InvalidParamI18n("error.e0116")
@@ -82,6 +91,15 @@ func (s *conversationHumanDispatchService) HandoffByAIWithRequestID(conversation
 	teamIDs := orderedPositiveIDs(aiAgent.TeamIDs)
 	activeTeamIDs := ConversationDispatchService.findActiveScheduleTeamIDs(teamIDs, time.Now())
 	if len(activeTeamIDs) == 0 {
+		if queueOffHours {
+			if err := s.markHandoff(conversationID, aiAgent, reason, requestID); err != nil {
+				return nil, err
+			}
+			if current := ConversationService.Get(conversationID); current != nil {
+				WsService.PublishConversationChanged(current, enums.IMRealtimeEventConversationPending)
+			}
+			return &HandoffDecisionResult{Decision: HandoffDecisionGlobalPool}, nil
+		}
 		if _, err := s.TryOffHoursHandoffByAIWithRequestID(conversationID, aiAgent, reason, requestID); err != nil {
 			return nil, err
 		}

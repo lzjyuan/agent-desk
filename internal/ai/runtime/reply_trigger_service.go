@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"strings"
 	"time"
@@ -11,6 +12,8 @@ import (
 	"agent-desk/internal/pkg/enums"
 	"agent-desk/internal/pkg/tracex"
 	svc "agent-desk/internal/services"
+
+	"github.com/cloudwego/eino/compose"
 )
 
 func (s *aiReplyService) resolveReplyTimeout(aiAgent models.AIAgent) time.Duration {
@@ -80,6 +83,9 @@ func (s *aiReplyService) executeReply(ctx context.Context, replyCtx aiReplyConte
 	})
 	replyCtx.setSummary(summary)
 	if err != nil {
+		if errors.Is(err, compose.ErrExceedMaxSteps) {
+			return s.handleStepLimit(replyCtx)
+		}
 		return err
 	}
 	if summary != nil && summary.Interrupted {
@@ -110,4 +116,15 @@ func (s *aiReplyService) executeReply(ctx context.Context, replyCtx aiReplyConte
 		}
 	}
 	return nil
+}
+
+func (s *aiReplyService) handleStepLimit(replyCtx aiReplyContext) error {
+	slog.Warn("agent loop reached model turn limit",
+		"conversation_id", replyCtx.Conversation.ID,
+		"message_id", replyCtx.Message.ID,
+		"ai_agent_id", replyCtx.AIAgent.ID,
+		"max_steps", replyCtx.AIAgent.MaxSteps)
+	_, err := svc.ConversationHumanDispatchService.HandoffAfterStepLimit(
+		replyCtx.Conversation.ID, replyCtx.AIAgent, replyCtx.Message.RequestID)
+	return err
 }

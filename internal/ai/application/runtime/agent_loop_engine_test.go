@@ -3,6 +3,8 @@ package runtime
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -12,10 +14,56 @@ import (
 	"agent-desk/internal/pkg/enums"
 	svc "agent-desk/internal/services"
 
+	einoModel "github.com/cloudwego/eino/components/model"
+	einoTool "github.com/cloudwego/eino/components/tool"
+	"github.com/cloudwego/eino/compose"
+	"github.com/cloudwego/eino/flow/agent/react"
+	"github.com/cloudwego/eino/schema"
 	"github.com/glebarez/sqlite"
 	"github.com/mlogclub/simple/sqls"
 	"gorm.io/gorm"
 )
+
+type stepCountingModel struct{ calls int }
+
+func (m *stepCountingModel) WithTools([]*schema.ToolInfo) (einoModel.ToolCallingChatModel, error) {
+	return m, nil
+}
+
+func (m *stepCountingModel) Generate(context.Context, []*schema.Message, ...einoModel.Option) (*schema.Message, error) {
+	m.calls++
+	if m.calls <= 2 {
+		return schema.AssistantMessage("", []schema.ToolCall{{
+			ID: strconv.Itoa(m.calls), Function: schema.FunctionCall{Name: "test_tool", Arguments: `{}`},
+		}}), nil
+	}
+	return schema.AssistantMessage("done", nil), nil
+}
+
+func (m *stepCountingModel) Stream(context.Context, []*schema.Message, ...einoModel.Option) (*schema.StreamReader[*schema.Message], error) {
+	return nil, errors.New("unexpected streaming call")
+}
+
+func TestEinoGraphMaxStepsAllowsConfiguredModelTurns(t *testing.T) {
+	ctx := context.Background()
+	model := &stepCountingModel{}
+	tool, err := newEinoFunctionTool(ai.ToolDefinition{Name: "test_tool"}, func(context.Context, ai.ToolCall) (string, error) { return `{}`, nil })
+	if err != nil {
+		t.Fatal(err)
+	}
+	agent, err := react.NewAgent(ctx, &react.AgentConfig{
+		ToolCallingModel: model,
+		ToolsConfig:      compose.ToolsNodeConfig{Tools: []einoTool.BaseTool{tool}},
+		MaxStep:          einoGraphMaxSteps(3),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, err := agent.Generate(ctx, []*schema.Message{schema.UserMessage("hello")})
+	if err != nil || result.Content != "done" || model.calls != 3 {
+		t.Fatalf("three model turns with two tool calls: result=%#v calls=%d err=%v", result, model.calls, err)
+	}
+}
 
 func TestAgentLoopActivatesSkillInsideSameToolLoop(t *testing.T) {
 	skill := models.SkillDefinition{
